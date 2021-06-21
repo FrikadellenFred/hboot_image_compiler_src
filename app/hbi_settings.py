@@ -24,10 +24,11 @@ import os
 import sys
 
 file_path = os.path.realpath(__file__)
-cwd_ = os.path.dirname(file_path)
+cwd_ = os.path.dirname(os.path.dirname(os.path.dirname(file_path)))
 
 print("file_path: %s" % file_path)
 print("cwd_: %s" % cwd_)
+print(os.listdir(cwd_))
 
 hbi_path = cwd_
-sys.path.append(hbi_path)
+sys.path.insert(0, hbi_path)

@@ -31,20 +31,19 @@ import os.path
 import re
 import platform
 import subprocess
-import sys
 import tempfile
 import xml.dom.minidom
 import xml.etree.ElementTree
+
+from hil_nxt_hboot_image_compiler.com import patch_definitions as patch_definitions
+from hil_nxt_hboot_image_compiler.com import option_compiler as option_compiler
+from hil_nxt_hboot_image_compiler.com import elf_support as elf_support
+from hil_nxt_hboot_image_compiler.com import snippet_library as snippet_library
 
 # import elf_support
 # import option_compiler
 # import patch_definitions
 # import snippet_library
-
-import elf_support as elf_support
-import option_compiler as option_compiler
-import patch_definitions as patch_definitions
-import snippet_library as snippet_library
 
 
 class ResolveDefines(ast.NodeTransformer):
@@ -2053,7 +2052,7 @@ class HbootImage:
 
                     # Get all symbols.
                     atSymbols = elf_support.get_symbol_table(self.__tEnv,
-                                                             strAbsFilePath)
+                                                                                          strAbsFilePath)
                     if strStartSymbol not in atSymbols:
                         raise Exception(
                             'The symbol for the start startaddress "%s" '

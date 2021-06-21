@@ -21,24 +21,21 @@
 # ***************************************************************************
 
 import argparse
-import os.path
 import re
-
-import sys
-
 from hbi_settings import *
-import hboot_image as hboot_image
-import hboot_image_version as hboot_image_version
 
-# import hboot_image
-# import hboot_image_version
+import hil_nxt_hboot_image_compiler
+from hil_nxt_hboot_image_compiler._version import get_versions
+from hil_nxt_hboot_image_compiler.com.hboot_image import HbootImage
 
+module_path = os.path.dirname(hil_nxt_hboot_image_compiler.__file__)
+version_dict = get_versions()
 
 tParser = argparse.ArgumentParser(usage='hboot_image [options]')
 tParser.add_argument(
     '--version',
     action='version',
-    version=hboot_image_version.VERSION_STRING
+    version=version_dict.get('version', 'ERROR: no version string found!')
 )
 tGroupe = tParser.add_mutually_exclusive_group(required=True)
 tGroupe.add_argument('-n', '--netx-type',
@@ -186,7 +183,7 @@ else:
 
 if tArgs.strPatchTablePath is None:
 
-    path_patch_tables = os.path.join(hbi_path, "patch_tables")
+    path_patch_tables = os.path.join(module_path, "patch_tables")
     print("path_patch_tables: '%s'" % path_patch_tables)
     for file in os.listdir(path_patch_tables):
         print("-%s" % file)
@@ -254,7 +251,7 @@ tEnv = {'OBJCOPY': tArgs.strObjCopy,
         'READELF': tArgs.strReadElf,
         'HBOOT_INCLUDE': tArgs.astrIncludePaths}
 
-tCompiler = hboot_image.HbootImage(
+tCompiler = HbootImage(
     tEnv,
     strNetxType,
     defines=atDefinitions,

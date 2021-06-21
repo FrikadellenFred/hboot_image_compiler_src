@@ -36,18 +36,21 @@ import logging
 import os
 import sys
 import re
-import string
 import platform
 import subprocess
 import tempfile
 import xml.dom.minidom
 import xml.etree.ElementTree
 
-cwd_ = os.path.dirname(os.path.realpath(__file__))
-project_path = os.path.dirname(cwd_)
-sys.path.append(project_path)
-import hboot_image_compiler.elf_support as elf_support
-import hboot_image_compiler.hboot_image_version as hboot_image_version
+# cwd_ = os.path.dirname(os.path.realpath(__file__))
+# project_path = os.path.dirname(cwd_)
+# sys.path.append(project_path)
+from hbi_settings import *
+
+import hil_nxt_hboot_image_compiler.com.elf_support as elf_support
+from hil_nxt_hboot_image_compiler._version import get_versions
+version_dict = get_versions()
+# import hil_nxt_hboot_image_compiler.com.hboot_image_version as hboot_image_version
 
 # Is this a standalone script?
 if __name__ != '__main__':
@@ -1869,7 +1872,7 @@ if __name__ == '__main__':
     tParser.add_argument(
         '--version',
         action='version',
-        version=hboot_image_version.VERSION_STRING
+        version=version_dict.get('version', 'ERROR: No version string found')
     )
     tParser.add_argument(
         'astrOutputFiles',
