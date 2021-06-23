@@ -184,9 +184,7 @@ else:
 if tArgs.strPatchTablePath is None:
 
     path_patch_tables = os.path.join(module_path, "patch_tables")
-    print("path_patch_tables: '%s'" % path_patch_tables)
-    for file in os.listdir(path_patch_tables):
-        print("-%s" % file)
+
     tArgs.strPatchTablePath = os.path.join(
         path_patch_tables,
         atDefaultPatchTables[strNetxType]
