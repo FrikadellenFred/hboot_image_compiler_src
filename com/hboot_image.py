@@ -138,6 +138,8 @@ class HbootImage:
     __MAGIC_COOKIE_NETX90B_ALT = 0xf3ad9e00
     __MAGIC_COOKIE_NETX90C = 0xf3beaf00
     __MAGIC_COOKIE_NETX90C_ALT = 0xf3ad9e00
+    __MAGIC_COOKIE_NETX90D = 0xf3beaf00
+    __MAGIC_COOKIE_NETX90D_ALT = 0xf3ad9e00
     __MAGIC_COOKIE_NETXXL_MPW = 0xf2beaf00
 
     __resolver = None
@@ -613,6 +615,7 @@ class HbootImage:
     ROMLOADER_CHIPTYP_NETX90 = 13
     ROMLOADER_CHIPTYP_NETX90B = 14
     ROMLOADER_CHIPTYP_NETX90C = 17
+    ROMLOADER_CHIPTYP_NETX90D = 18
 
     atChipTypeMapping = {
         'NETX90': {
@@ -625,6 +628,10 @@ class HbootImage:
         },
         'NETX90C': {
             'chip_type': ROMLOADER_CHIPTYP_NETX90C,
+            'dev_mapping': atDeviceMapping_netx90
+        },
+        'NETX90D': {
+            'chip_type': ROMLOADER_CHIPTYP_NETX90D,
             'dev_mapping': atDeviceMapping_netx90
         },
         'NETX90_MPW': {
@@ -720,6 +727,12 @@ class HbootImage:
                 ulMagicCookie = self.__MAGIC_COOKIE_NETX90C_ALT
             else:
                 ulMagicCookie = self.__MAGIC_COOKIE_NETX90C
+            ulSignature = self.__get_tag_id('M', 'O', 'O', 'H')
+        elif self.__strNetxType == 'NETX90D':
+            if self.__tImageType == self.__IMAGE_TYPE_ALTERNATIVE:
+                ulMagicCookie = self.__MAGIC_COOKIE_NETX90D_ALT
+            else:
+                ulMagicCookie = self.__MAGIC_COOKIE_NETX90D
             ulSignature = self.__get_tag_id('M', 'O', 'O', 'H')
         elif self.__strNetxType == 'NETXXL_MPW':
             if self.__tImageType == self.__IMAGE_TYPE_ALTERNATIVE:
@@ -991,6 +1004,7 @@ class HbootImage:
                 (self.__strNetxType == 'NETX90') or
                 (self.__strNetxType == 'NETX90B') or
                 (self.__strNetxType == 'NETX90C') or
+                (self.__strNetxType == 'NETX90D') or
                 (self.__strNetxType == 'NETXXL_MPW')
             ):
                 # Pad the option chunk to 32 bit size.
@@ -1100,7 +1114,8 @@ class HbootImage:
             (self.__strNetxType == 'NETX90_MPW') or
             (self.__strNetxType == 'NETX90') or
             (self.__strNetxType == 'NETX90B') or
-            (self.__strNetxType == 'NETX90C')
+            (self.__strNetxType == 'NETX90C') or
+            (self.__strNetxType == 'NETX90D')
         ):
             aucData = array.array('B')
 
@@ -1922,7 +1937,8 @@ class HbootImage:
             (self.__strNetxType == 'NETX90_MPW') or
             (self.__strNetxType == 'NETX90') or
             (self.__strNetxType == 'NETX90B') or
-            (self.__strNetxType == 'NETX90C')
+            (self.__strNetxType == 'NETX90C') or
+            (self.__strNetxType == 'NETX90D')
         ):
             atXIPAreas = [
                 # SQI flash
@@ -2124,7 +2140,8 @@ class HbootImage:
         if(
           (self.__strNetxType == 'NETX90') or
           (self.__strNetxType == 'NETX90B') or
-          (self.__strNetxType == 'NETX90C')
+          (self.__strNetxType == 'NETX90C') or
+          (self.__strNetxType == 'NETX90D')
         ):
             sizDataInDwords = 6
 
@@ -2433,7 +2450,8 @@ class HbootImage:
             (self.__strNetxType == 'NETX90_MPW') or
             (self.__strNetxType == 'NETX90') or
             (self.__strNetxType == 'NETX90B') or
-            (self.__strNetxType == 'NETX90C')
+            (self.__strNetxType == 'NETX90C') or
+            (self.__strNetxType == 'NETX90D')
         ):
             sizOffsetCurrent += (1 + 1 + self.__sizHashDw) * 4
         else:
@@ -2759,7 +2777,8 @@ class HbootImage:
                         (self.__strNetxType == 'NETX90_MPW') or
                         (self.__strNetxType == 'NETX90') or
                         (self.__strNetxType == 'NETX90B') or
-                        (self.__strNetxType == 'NETX90C')
+                        (self.__strNetxType == 'NETX90C') or
+                        (self.__strNetxType == 'NETX90D')
                     ):
                         uiId = uiElementId + 1
                     else:
@@ -2879,7 +2898,8 @@ class HbootImage:
                         (self.__strNetxType == 'NETX90_MPW') or
                         (self.__strNetxType == 'NETX90') or
                         (self.__strNetxType == 'NETX90B') or
-                        (self.__strNetxType == 'NETX90C')
+                        (self.__strNetxType == 'NETX90C') or
+                        (self.__strNetxType == 'NETX90D')
                     ):
                         uiId = uiElementId + 1
                     else:
@@ -2941,7 +2961,8 @@ class HbootImage:
             (self.__strNetxType == 'NETX90_MPW') or
             (self.__strNetxType == 'NETX90') or
             (self.__strNetxType == 'NETX90B') or
-            (self.__strNetxType == 'NETX90C')
+            (self.__strNetxType == 'NETX90C') or
+            (self.__strNetxType == 'NETX90D')
         ):
             sizBindingExpected = 28
 
@@ -4102,7 +4123,8 @@ class HbootImage:
         # an MDUP chunk. All other chips allow only one device.
         if(
             (self.__strNetxType == 'NETX90B') or
-            (self.__strNetxType == 'NETX90C')
+            (self.__strNetxType == 'NETX90C') or
+            (self.__strNetxType == 'NETX90D')
         ):
             # Get the comma separated list of devices.
             strDeviceList = tChunkNode.getAttribute('device')
@@ -4127,7 +4149,7 @@ class HbootImage:
                 raise Exception('The device attribute must not be empty.')
             if len(aucDevices) > 12:
                 raise Exception('The device attribute must not have more '
-                                'than 12 entries on the netX90B/C.')
+                                'than 12 entries on the netX90_rev1/rev2.')
 
             # Pad the data with 0x00 (NOP) to a multiple of 4.
             sizPadding = (4 - (len(aucDevices) & 3) & 3)
@@ -5156,6 +5178,7 @@ class HbootImage:
                     'NETX90_MPW',
                     'NETX90B',
                     'NETX90C',
+                    'NETX90D',
                     'NETX90',
                     'NETXXL_MPW'
                 ]
@@ -5179,6 +5202,7 @@ class HbootImage:
                     'NETX90',
                     'NETX90B',
                     'NETX90C',
+                    'NETX90D',
                     'NETXXL_MPW'
                 ]
             },
@@ -5200,7 +5224,8 @@ class HbootImage:
                     # 'NETX90_MPW',
                     'NETX90',
                     'NETX90B',
-                    'NETX90C'
+                    'NETX90C',
+                    'NETX90D'
                 ]
             },
             'Data': {
@@ -5222,6 +5247,7 @@ class HbootImage:
                     'NETX90',
                     'NETX90B',
                     'NETX90C',
+                    'NETX90D',
                     'NETXXL_MPW'
                 ]
             },
@@ -5244,6 +5270,7 @@ class HbootImage:
                     'NETX90',
                     'NETX90B',
                     'NETX90C',
+                    'NETX90D',
                     'NETXXL_MPW'
                 ]
             },
@@ -5266,6 +5293,7 @@ class HbootImage:
                     'NETX90',
                     'NETX90B',
                     'NETX90C',
+                    'NETX90D',
                     'NETXXL_MPW'
                 ]
             },
@@ -5288,6 +5316,7 @@ class HbootImage:
                     'NETX90',
                     'NETX90B',
                     'NETX90C',
+                    'NETX90D',
                     'NETXXL_MPW'
                 ]
             },
@@ -5331,6 +5360,7 @@ class HbootImage:
                     'NETX90',
                     'NETX90B',
                     'NETX90C',
+                    'NETX90D',
                     'NETXXL_MPW'
                 ]
             },
@@ -5353,6 +5383,7 @@ class HbootImage:
                     'NETX90',
                     'NETX90B',
                     'NETX90C',
+                    'NETX90D',
                     'NETXXL_MPW'
                 ]
             },
@@ -5374,7 +5405,8 @@ class HbootImage:
                     'NETX90_MPW',
                     'NETX90',
                     'NETX90B',
-                    'NETX90C'
+                    'NETX90C',
+                    'NETX90D'
                 ]
             },
             'RootCert': {
@@ -5480,6 +5512,7 @@ class HbootImage:
                     'NETX90',
                     'NETX90B',
                     'NETX90C',
+                    'NETX90D',
                     'NETXXL_MPW'
                 ]
             },
@@ -5501,7 +5534,8 @@ class HbootImage:
                     # 'NETX90_MPW',
                     'NETX90',
                     'NETX90B',
-                    'NETX90C'
+                    'NETX90C',
+                    'NETX90D'
                 ]
             },
             'HashTable': {
@@ -5522,7 +5556,8 @@ class HbootImage:
                     # 'NETX90_MPW',
                     'NETX90',
                     'NETX90B',
-                    'NETX90C'
+                    'NETX90C',
+                    'NETX90D'
                 ]
             },
             'Next': {
@@ -5543,7 +5578,8 @@ class HbootImage:
                     # 'NETX90_MPW',
                     'NETX90',
                     'NETX90B',
-                    'NETX90C'
+                    'NETX90C',
+                    'NETX90D'
                 ]
             },
             'DaXZ': {
@@ -5565,6 +5601,7 @@ class HbootImage:
                     'NETX90',
                     'NETX90B',
                     'NETX90C',
+                    'NETX90D',
                     'NETXXL_MPW'
                 ]
             },
@@ -5588,6 +5625,7 @@ class HbootImage:
                     'NETX90',
                     'NETX90B',
                     'NETX90C',
+                    'NETX90D'
                     # 'NETXXL_MPW'
                 ]
             },
@@ -5723,7 +5761,8 @@ class HbootImage:
             'NETX4100',
             'NETX90',
             'NETX90B',
-            'NETX90C'
+            'NETX90C',
+            'NETX90D'
         ]
         if self.__tImageType == self.__IMAGE_TYPE_ALTERNATIVE:
             if self.__strNetxType not in astrNetxWithAlternativeImages:

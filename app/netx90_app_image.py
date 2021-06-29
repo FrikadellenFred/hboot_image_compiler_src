@@ -1241,7 +1241,7 @@ class AppImage:
     ROMLOADER_CHIPTYP_NETX90_MPW = 10
     ROMLOADER_CHIPTYP_NETX90 = 13
     ROMLOADER_CHIPTYP_NETX90B = 14
-    ROMLOADER_CHIPTYP_NETX90C = 17
+    ROMLOADER_CHIPTYP_NETX90D = 17
 
     atChipTypeMapping = {
         # These names are for compatibility with the COM side HBoot image tool
@@ -1249,11 +1249,11 @@ class AppImage:
         # 'NETX90B':    ROMLOADER_CHIPTYP_NETX90B,
         # 'NETX90_MPW': ROMLOADER_CHIPTYP_NETX90_MPW,
         # These names are for compatibility with the netx 90 HWConfig tool.
-        'netx90': ROMLOADER_CHIPTYP_NETX90C,  # Alias for the latest chip
+        'netx90': ROMLOADER_CHIPTYP_NETX90D,  # Alias for the latest chip
                                               # revision.
         'netx90_rev0': ROMLOADER_CHIPTYP_NETX90,
         'netx90_rev1': ROMLOADER_CHIPTYP_NETX90B,
-        'netx90_rev2': ROMLOADER_CHIPTYP_NETX90C,
+        'netx90_rev2': ROMLOADER_CHIPTYP_NETX90D,
         'netx90_mpw': ROMLOADER_CHIPTYP_NETX90_MPW,
     }
 
