@@ -31,6 +31,7 @@ import os.path
 import re
 import platform
 import subprocess
+import sys
 import tempfile
 import xml.dom.minidom
 import xml.etree.ElementTree
@@ -1418,10 +1419,9 @@ class HbootImage:
         while (len(abData) & 3) != 0:
             abData.append(0)
 
-        # Convert to an arrray of dwords
-        strData = str(abData)
+        # Convert to an array of DWords
         aulData = array.array('I')
-        aulData.fromstring(strData)
+        aulData.fromstring(bytes(abData))
 
         aulCmds.extend(aulData)
 
@@ -1804,7 +1804,12 @@ class HbootImage:
                                 raise Exception('Unexpected node: %s' %
                                                 tConcatNode.localName)
 
-                    strData = ''.join(astrData)
+                    strData = bytearray()
+                    for data in astrData:
+                        if type(data) is str and sys.version_info.major > 2:
+                            strData.extend(data.encode())
+                        else:
+                            strData.extend(data)
 
                 else:
                     raise Exception('Unexpected node: %s' % tNode.localName)
@@ -1835,7 +1840,7 @@ class HbootImage:
 
         # Convert the padded data to an array.
         aulData = array.array('I')
-        aulData.fromstring(strChunk)
+        aulData.fromstring(bytes(strChunk))
 
         aulChunk = array.array('I')
         # Do not add an ID for info page images.
@@ -2001,12 +2006,14 @@ class HbootImage:
 
         # The load address must be exactly the address where the code starts.
         # Pad the application size to a multiple of DWORDs.
-        strPadding = chr(0x00) * ((4 - (len(strData) % 4)) & 3)
-        strChunk = strData + strPadding
+        strPadding = bytearray([0x00] * ((4 - (len(strData) % 4)) & 3))
+        abChunk = bytearray()
+        abChunk.extend(strData)
+        abChunk.extend(strPadding)
 
         # Convert the padded data to an array.
         aulData = array.array('I')
-        aulData.fromstring(strChunk)
+        aulData.fromstring(bytes(abChunk))
 
         aulChunk = array.array('I')
         aulChunk.append(self.__get_tag_id('T', 'E', 'X', 'T'))
@@ -2366,11 +2373,16 @@ class HbootImage:
         if sizMacro > 255:
             raise Exception('The SPI macro is too long. The header can only '
                             'indicate up to 255 bytes.')
-        abData = chr(ulDevice) + chr(sizMacro) + abMacroData
+        abData = bytearray()
+        abData.append(ulDevice)
+        abData.append(sizMacro)
+        abData.extend(abMacroData)
 
         # Pad the macro to a multiple of dwords.
-        strPadding = chr(0x00) * ((4 - (len(abData) % 4)) & 3)
-        abChunk = abData + strPadding
+        strPadding = bytearray([0x00] * ((4 - (len(abData) % 4)) & 3))
+        abChunk = bytearray()
+        abChunk.extend(abData)
+        abChunk.extend(strPadding)
 
         # Convert the padded data to an array.
         aulData = array.array('I')
@@ -2569,13 +2581,16 @@ class HbootImage:
                 strFillData = tFile.read(sizSkipBytes)
                 tFile.close()
 
+
             # Fill up to the requested size.
+            abFillData = bytearray()
+            abFillData.extend(strFillData)
             sizFillData = len(strFillData)
             if sizFillData < sizSkipBytes:
-                strFillData += chr(ucFill) * (sizSkipBytes - sizFillData)
+                abFillData.extend([ucFill] * (sizSkipBytes - sizFillData))
 
             # Append the contents to the chunk.
-            aulChunk.fromstring(strFillData)
+            aulChunk.fromstring(bytes(abFillData))
 
         else:
             # Repeat the fill byte in all 4 bytes of a 32 bit value.
@@ -2611,7 +2626,7 @@ class HbootImage:
     # This function gets a data block from the OpenSSL output.
     def __openssl_get_data_block(self, strStdout, strID):
         aucData = array.array('B')
-        tReData = re.compile('^[0-9a-fA-F]{2}(:[0-9a-fA-F]{2})*:?$')
+        tReData = re.compile('^[0-9a-fA-F]{2}(:[0-9a-fA-F]{2})*:?')
         iState = 0
         for strLine in iter(strStdout.splitlines()):
             strLine = strLine.strip()
@@ -2725,12 +2740,13 @@ class HbootImage:
         # "priv:".
         iKeyTyp_1ECC_2RSA = None
         atAttr = None
+        strDecodedStdout = strStdout.decode()
         strMatchExponent = 'publicExponent:'
         strMatchModulus = 'modulus:'
         if fIsPublicKey is True:
             strMatchExponent = 'Exponent:'
             strMatchModulus = 'Modulus:'
-        if strStdout.find(strMatchModulus) != -1:
+        if strDecodedStdout.find(strMatchModulus) != -1:
             # Looks like this is an RSA key.
             iKeyTyp_1ECC_2RSA = 2
 
@@ -2739,7 +2755,7 @@ class HbootImage:
                 r'^%s\s+(\d+)\s+\(0x([0-9a-fA-F]+)\)' % strMatchExponent,
                 re.MULTILINE
             )
-            tMatch = tReExp.search(strStdout)
+            tMatch = tReExp.search(strDecodedStdout)
             if tMatch is None:
                 raise Exception('Can not find public exponent!')
             ulExp = int(tMatch.group(1))
@@ -2749,15 +2765,14 @@ class HbootImage:
             if (ulExp < 0) or (ulExp > 0xffffff):
                 raise Exception('The exponent exceeds the allowed range of a '
                                 '24bit unsigned integer!')
-            strData = (
-                chr(ulExp & 0xff) +
-                chr((ulExp >> 8) & 0xff) +
-                chr((ulExp >> 16) & 0xff)
-            )
+            strData = bytearray()
+            strData.append(ulExp & 0xff)
+            strData.append((ulExp >> 8) & 0xff)
+            strData.append((ulExp >> 16) & 0xff)
             aucExp = array.array('B', strData)
 
             # Extract the modulus "N".
-            aucMod = self.__openssl_get_data_block(strStdout, strMatchModulus)
+            aucMod = self.__openssl_get_data_block(strDecodedStdout, strMatchModulus)
             self.__openssl_cut_leading_zero(aucMod)
             self.__openssl_convert_to_little_endian(aucMod)
 
@@ -4160,7 +4175,7 @@ class HbootImage:
 
             aulChunk = array.array('I')
             aulChunk.append(self.__get_tag_id('M', 'D', 'U', 'P'))
-            aulChunk.append(sizDataDW + self.__sizHashDw)
+            aulChunk.append(int(sizDataDW + self.__sizHashDw))
             aulChunk.fromstring(aucDevices.tostring())
 
         else:
@@ -4789,7 +4804,7 @@ class HbootImage:
             # In pass 0 only reserve space.
             aulChunk = array.array(
                 'I',
-                [0] * (sizChunkMinimumSizeInDwords + sizFillUpInDwords)
+                [0] * (int(sizChunkMinimumSizeInDwords) + int(sizFillUpInDwords))
             )
 
             tChunkAttributes['fIsFinished'] = False
@@ -4918,7 +4933,7 @@ class HbootImage:
                 aulChunk.append(self.__get_tag_id('H', 'T', 'B', 'L'))
                 # The size field does not include the ID and itself.
                 aulChunk.append(
-                    sizChunkMinimumSizeInDwords + sizFillUpInDwords - 2
+                    int(sizChunkMinimumSizeInDwords) + int(sizFillUpInDwords) - 2
                 )
                 # Add the data part.
                 aulChunk.fromstring(aucData.tostring())
@@ -4999,7 +5014,7 @@ class HbootImage:
                 os.remove(strPathSignatureInputData)
 
                 # Append the fill-up.
-                aulChunk.extend([0] * sizFillUpInDwords)
+                aulChunk.extend([0] * int(sizFillUpInDwords))
 
                 # Append the signature to the chunk.
                 aulChunk.fromstring(aucSignature.tostring())
@@ -5062,7 +5077,7 @@ class HbootImage:
         aulChunk.append(self.__get_tag_id('N', 'E', 'X', 'T'))
         aulChunk.append(2 + self.__sizHashDw)
         aulChunk.append(ulDevice)
-        aulChunk.append(ulOffsetInDwords)
+        aulChunk.append(int(ulOffsetInDwords))
 
         # Get the hash for the chunk.
         tHash = hashlib.sha384()

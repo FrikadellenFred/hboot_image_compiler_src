@@ -824,7 +824,8 @@ class AppImage:
         # "priv:".
         iKeyTyp_1ECC_2RSA = None
         atAttr = None
-        if strStdout.find('modulus:') != -1:
+        strDecodedStdout = strStdout.decode()
+        if strDecodedStdout.find('modulus:') != -1:
             # Looks like this is an RSA key.
             iKeyTyp_1ECC_2RSA = 2
 
@@ -839,7 +840,7 @@ class AppImage:
                 r'^%s\s+(\d+)\s+\(0x([0-9a-fA-F]+)\)' % strMatchExponent,
                 re.MULTILINE
             )
-            tMatch = tReExp.search(strStdout)
+            tMatch = tReExp.search(strDecodedStdout)
             if tMatch is None:
                 raise Exception('Can not find public exponent!')
             ulExp = int(tMatch.group(1))
@@ -849,15 +850,19 @@ class AppImage:
             if (ulExp < 0) or (ulExp > 0xffffff):
                 raise Exception('The exponent exceeds the allowed range of a '
                                 '24bit unsigned integer!')
-            strData = (
-                chr(ulExp & 0xff) +
-                chr((ulExp >> 8) & 0xff) +
-                chr((ulExp >> 16) & 0xff)
-            )
+            strData = bytearray()
+            strData.append(ulExp & 0xff)
+            strData.append((ulExp >> 8) & 0xff)
+            strData.append((ulExp >> 16) & 0xff)
+            # strData = (
+            #     chr(ulExp & 0xff) +
+            #     chr((ulExp >> 8) & 0xff) +
+            #     chr((ulExp >> 16) & 0xff)
+            # )
             aucExp = array.array('B', strData)
 
             # Extract the modulus "N".
-            aucMod = self.__openssl_get_data_block(strStdout, strMatchModulus)
+            aucMod = self.__openssl_get_data_block(strDecodedStdout, strMatchModulus)
             self.__openssl_cut_leading_zero(aucMod)
             self.__openssl_convert_to_little_endian(aucMod)
 
@@ -1129,7 +1134,7 @@ class AppImage:
         # Combine all data to the chunk.
         aulChunk = array.array('I')
         aulChunk.append(self.__get_tag_id('A', 'S', 'I', 'G'))
-        aulChunk.append(28 + sizSignatureInDwords)
+        aulChunk.append(28 + int(sizSignatureInDwords))
 
         # Add the binding.
         aulChunk.fromstring(__atCert['Binding']['value'].tostring())
@@ -1395,8 +1400,8 @@ class AppImage:
             )
 
         # Extract the HBOOT header.
-        aulHBoot = array.array('I')
-        aulHBoot.fromstring(aulInputImage[112:128])
+        # aulHBoot = array.array('I')
+        aulHBoot = aulInputImage[112:128]
 
         # Check the magic and signature.
         if aulHBoot[0x00] != 0xf3beaf00:
