@@ -174,9 +174,7 @@ if tArgs.strNetxType == 'netx90':
 elif tArgs.strNetxType == 'netx90_rev0':
     strNetxType = 'NETX90'
 elif tArgs.strNetxType == 'netx90_rev1':
-    strNetxType = 'NETX90B'
-elif tArgs.strNetxType == 'netx90_rev1':
-    strNetxType = 'NETX90C'
+    strNetxType = 'NETX90B'  # NETX90C is included in this case (same functionality)
 elif tArgs.strNetxType == 'netx90_rev2':
     strNetxType = 'NETX90D'
 elif tArgs.strNetxType == 'netx90_mpw':
