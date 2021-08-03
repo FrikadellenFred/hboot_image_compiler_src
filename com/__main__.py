@@ -37,10 +37,10 @@ tParser.add_argument(
     action='version',
     version=version_dict.get('version', 'ERROR: no version string found!')
 )
-tGroupe = tParser.add_mutually_exclusive_group(required=True)
-tGroupe.add_argument('-n', '--netx-type',
-                     dest='strNetxType',
-                     choices=[
+tGroup = tParser.add_mutually_exclusive_group(required=True)
+tGroup.add_argument('-n', '--netx-type',
+                    dest='strNetxType',
+                    choices=[
                          'NETX56',
                          'NETX90',
                          'NETX90B',
@@ -52,23 +52,25 @@ tGroupe.add_argument('-n', '--netx-type',
                          'NETX4100',
                          'NETXXL_MPW'
                      ],
-                     metavar='NETX',
-                     help='Build the image for netx type NETX.')
-tGroupe.add_argument('--netx-type-public',
-                     dest='strNetxType',
-                     choices=[
+                    metavar='NETX',
+                    help=argparse.SUPPRESS,
+                    # help='Build the image for netx type NETX.'
+                    )
+tGroup.add_argument('--netx-type-public',
+                    dest='strNetxType',
+                    choices=[
                          'netx90',
-                         'netx90_rev0',
+                         # 'netx90_rev0',
                          'netx90_rev1',
-                         'netx90_rev2',
-                         'netx90_mpw',
-                         'NETX56',
-                         'NETX4000_RELAXED',
-                         'NETX4000',
-                         'NETX4100'
+                         # 'netx90_rev2',
+                         # 'netx90_mpw',
+                         # 'NETX56',
+                         # 'NETX4000_RELAXED',
+                         # 'NETX4000',
+                         # 'NETX4100'
                      ],
-                     metavar='NETX',
-                     help='Build the image for netx type public NETX.')
+                    # metavar='NETX',
+                    help='Build the image for netx type public NETX.')
 tParser.add_argument('-c', '--objcopy',
                      dest='strObjCopy',
                      required=False,
@@ -170,7 +172,7 @@ atDefaultPatchTables = {
 }
 
 if tArgs.strNetxType == 'netx90':
-    strNetxType = 'NETX90D'
+    strNetxType = 'NETX90B'
 elif tArgs.strNetxType == 'netx90_rev0':
     strNetxType = 'NETX90'
 elif tArgs.strNetxType == 'netx90_rev1':

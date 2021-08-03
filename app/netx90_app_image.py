@@ -57,6 +57,34 @@ if __name__ != '__main__':
     # No -> import the SCons module.
     import SCons.Script
 
+ROMLOADER_CHIPTYP_NETX90_MPW = 10
+ROMLOADER_CHIPTYP_NETX90 = 13
+ROMLOADER_CHIPTYP_NETX90B = 14
+ROMLOADER_CHIPTYP_NETX90D = 18
+
+netx90_mapping = {
+        # These names are for compatibility with the COM side HBoot image tool
+        # 'NETX90':     ROMLOADER_CHIPTYP_NETX90,
+        # 'NETX90B':    ROMLOADER_CHIPTYP_NETX90B,
+        # 'NETX90_MPW': ROMLOADER_CHIPTYP_NETX90_MPW,
+        # These names are for compatibility with the netx 90 HWConfig tool.
+        'netx90': ROMLOADER_CHIPTYP_NETX90B,  # Alias for the latest chip
+                                              # revision.
+        'netx90_rev0': ROMLOADER_CHIPTYP_NETX90,
+        'netx90_rev1': ROMLOADER_CHIPTYP_NETX90B,
+        'netx90_rev2': ROMLOADER_CHIPTYP_NETX90D,
+        'netx90_mpw': ROMLOADER_CHIPTYP_NETX90_MPW,
+    }
+
+
+def get_netx90_mapping():
+    mapped_netx_type = None
+    netx90_mapped_id = netx90_mapping.get('netx90')
+    for key, mapped_id in netx90_mapping.items():
+        if key not in ['netx90'] and mapped_id is netx90_mapped_id:
+            mapped_netx_type = key
+    return mapped_netx_type
+
 
 class AppImage:
     # This is the environment.
@@ -1243,24 +1271,11 @@ class AppImage:
 
         return aulChunk
 
-    ROMLOADER_CHIPTYP_NETX90_MPW = 10
-    ROMLOADER_CHIPTYP_NETX90 = 13
-    ROMLOADER_CHIPTYP_NETX90B = 14
-    ROMLOADER_CHIPTYP_NETX90D = 17
 
-    atChipTypeMapping = {
-        # These names are for compatibility with the COM side HBoot image tool
-        # 'NETX90':     ROMLOADER_CHIPTYP_NETX90,
-        # 'NETX90B':    ROMLOADER_CHIPTYP_NETX90B,
-        # 'NETX90_MPW': ROMLOADER_CHIPTYP_NETX90_MPW,
-        # These names are for compatibility with the netx 90 HWConfig tool.
-        'netx90': ROMLOADER_CHIPTYP_NETX90D,  # Alias for the latest chip
-                                              # revision.
-        'netx90_rev0': ROMLOADER_CHIPTYP_NETX90,
-        'netx90_rev1': ROMLOADER_CHIPTYP_NETX90B,
-        'netx90_rev2': ROMLOADER_CHIPTYP_NETX90D,
-        'netx90_mpw': ROMLOADER_CHIPTYP_NETX90_MPW,
-    }
+
+
+
+    atChipTypeMapping = netx90_mapping
 
     BUS_SPI = 1
     BUS_IFlash = 2
@@ -1867,8 +1882,9 @@ def ApplyToEnv(env):
 
 if __name__ == '__main__':
     tParser = argparse.ArgumentParser(
-        description='Translate an XML APP image description file.'
+        description='Translate a Hboot-Image-XML file for netx90-APP image description file.'
     )
+
     tParser.add_argument(
         'strInputFile',
         metavar='INPUT_FILE',
@@ -1885,10 +1901,11 @@ if __name__ == '__main__':
         metavar='OUTPUT_FILE',
         help='write the output to OUTPUT_FILE'
     )
-    tParser.add_argument(
+    tGroup = tParser.add_mutually_exclusive_group(required=True)
+    tGroup.add_argument(
         '-n', '--netx-type',
         dest='strNetxType',
-        required=True,
+        # required=True,
         choices=[
             # For compatibility with hboot_image.py
             # 'NETX90',
@@ -1901,8 +1918,18 @@ if __name__ == '__main__':
             'netx90_rev1',
             'netx90_rev2',
         ],
-        metavar='NETX',
-        help='Build the image for netx type NETX.'
+        # metavar='NETX',
+        help=argparse.SUPPRESS,
+        # help='Build the image for netx type NETX.'
+    )
+    tGroup.add_argument(
+        '--netx-type-public',
+        dest='strNetxType',
+        choices=[
+            'netx90',
+            'netx90_rev1',
+        ],
+        help='Build the image for netx type public NETX. (netx90 is mapped to %s)' % get_netx90_mapping()
     )
     tParser.add_argument(
         '-c', '--objcopy',
@@ -1986,7 +2013,8 @@ if __name__ == '__main__':
         metavar='SSLRAND',
         help='Set openssl randomization true or false.'
     )
-    tArgs = tParser.parse_args()
+
+    tArgs = tParser.parse_args(args=['--help'] if len(sys.argv) < 2 else None)  # prints help if args are less than 2
 
     # Use a default logging level of "WARNING". Change it to "DEBUG" in
     # verbose mode.
