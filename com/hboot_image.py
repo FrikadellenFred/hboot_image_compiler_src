@@ -5901,7 +5901,7 @@ class HbootImage:
                 )
             if (ulMinImageSize % 4) != 0:
                 raise Exception(
-                    'The min_size is not a multiple of four' % ulMinImageSize
+                    "The min_size is not a multiple of four '%s'" % ulMinImageSize
                 )
         strMinImageSizeFillValue = tXmlRootNode.getAttribute(
             'min_size_fill_value'
@@ -5932,7 +5932,7 @@ class HbootImage:
                 )
             if (ulMaxImageSize % 4) != 0:
                 raise Exception(
-                    'The max_size is not a multiple of four' % ulMaxImageSize
+                    "The max_size is not a multiple of four '%s'" % ulMaxImageSize
                 )
 
         self.__ulMaxImageSize = ulMaxImageSize
