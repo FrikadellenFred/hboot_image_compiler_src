@@ -1881,7 +1881,63 @@ def ApplyToEnv(env):
 
 
 if __name__ == '__main__':
+    # todo fill this properly
+    hboot_image_compiler_app_epilog = f'''
+
+Example for creating a nai and nae image
+========================================   
+ 
+app_image.xml (input xml)
+_________________________
+    <AppImage>
+        <!-- The start part in INTFLASH2. -->
+        <data padding_pre_size="0" headeraddress="0">
+            <File name="@tElf" segments=".header,.code"/>
+        </data>
+        <!-- Code/data in the external flash. -->
+        <data headeraddress="0x64300000">
+            <File name="@tElf" segments=".code_SDRAM1,.code_SDRAM2"/>
+        </data>
+    </AppImage>
+
+
+example_command
+(<HBOOT_IMAGE_COMPILER_APP> can be the executable or the python script):
+________________________________________________________________________
+    $ <HBOOT_IMAGE_COMPILER_APP>
+        app_image.xml app_image.nai app_iamge.nae
+        -A tElf=example.elf 
+        -c arm-none-eabi-objcopy.exe
+        -d arm-none-eabi-objdump.exe
+        -r arm-none-eabi-readelf.exe
+
+
+Example for creating a nai image
+================================
+ 
+app_image.xml (input xml)
+_________________________
+    <AppImage>
+        <!-- The start part in INTFLASH2. -->
+        <data padding_pre_size="0" headeraddress="0">
+            <File name="@tElf" segments=".header,.code"/>
+        </data>
+    </AppImage>
+
+
+example_command 
+(<HBOOT_IMAGE_COMPILER_APP> can be the executable or the python script):
+________________________________________________________________________
+    $ <HBOOT_IMAGE_COMPILER_APP>
+        app_image.xml app_image.nai
+        -A tElf=example.elf 
+        -c arm-none-eabi-objcopy.exe
+        -d arm-none-eabi-objdump.exe
+        -r arm-none-eabi-readelf.exe        
+'''
+
     tParser = argparse.ArgumentParser(
+        formatter_class=argparse.RawDescriptionHelpFormatter,
         description='Translate a Hboot-Image-XML file for netx90-APP image description file.'
     )
 
@@ -1891,7 +1947,7 @@ if __name__ == '__main__':
         help='read the XML data from INPUT_FILE'
     )
     tParser.add_argument(
-        '--version',
+        '-V', '--version',
         action='version',
         version=version_dict.get('version', 'ERROR: No version string found')
     )
@@ -1901,10 +1957,11 @@ if __name__ == '__main__':
         metavar='OUTPUT_FILE',
         help='write the output to OUTPUT_FILE'
     )
-    tGroup = tParser.add_mutually_exclusive_group(required=True)
+    tGroup = tParser.add_mutually_exclusive_group(required=False)
     tGroup.add_argument(
         '-n', '--netx-type',
         dest='strNetxType',
+        default='netx90',
         # required=True,
         choices=[
             # For compatibility with hboot_image.py
@@ -1925,6 +1982,8 @@ if __name__ == '__main__':
     tGroup.add_argument(
         '--netx-type-public',
         dest='strNetxType',
+        default='netx90',
+
         choices=[
             'netx90',
             'netx90_rev1',
@@ -1977,7 +2036,8 @@ if __name__ == '__main__':
         required=False,
         default=None,
         metavar='FILE',
-        help='Read the keyrom data from FILE.'
+        # help='Read the keyrom data from FILE.'
+        help = argparse.SUPPRESS
     )
     tParser.add_argument(
         '-s',
@@ -1986,7 +2046,7 @@ if __name__ == '__main__':
         default="0x00000000",
         required=False,
         metavar="SDRAM",
-        help='Address offset for COM CPU to access APP side SDRAM.'
+        help='Address offset for COM CPU to access APP side SDRAM. (default: "0x00000000")'
     )
     tParser.add_argument(
         '-v',
@@ -2002,7 +2062,8 @@ if __name__ == '__main__':
         required=False,
         default='openssl',
         metavar='PATH',
-        help='Add individual OpenSSL Path.'
+        # help='Add individual OpenSSL Path.'
+        help=argparse.SUPPRESS
     )
     tParser.add_argument(
         '--openssl-rand-off',
@@ -2011,7 +2072,15 @@ if __name__ == '__main__':
         default=False,
         action='store_const', const=True,
         metavar='SSLRAND',
-        help='Set openssl randomization true or false.'
+        # help='Set openssl randomization true or false.'
+        help=argparse.SUPPRESS
+    )
+
+    tParser.add_argument(
+        '--show-example',
+        action='version',
+        version=hboot_image_compiler_app_epilog,
+        help="show examples to use this tool"
     )
 
     tArgs = tParser.parse_args(args=['--help'] if len(sys.argv) < 2 else None)  # prints help if args are less than 2
@@ -2059,6 +2128,12 @@ if __name__ == '__main__':
     }
 
     ulSDRamSplitOffset = int(tArgs.strSDRamSplitOffset, 0)
+
+    sdram_choices = [0x00000000, 0x00100000, 0x00200000, 0x00400000, 0x00800000,
+                     0x01000000, 0x02000000, 0x04000000, 0x08000000]
+    if ulSDRamSplitOffset not in sdram_choices:
+        raise ValueError("Wrong value selected for 'sdram_split_offset' chose from %s" % [hex(x) for x in sdram_choices] )
+
     tAppImg = AppImage(
         tEnv,
         tArgs.strNetxType,
