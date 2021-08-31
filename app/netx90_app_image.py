@@ -1942,20 +1942,16 @@ ________________________________________________________________________
     )
 
     tParser.add_argument(
-        'strInputFile',
-        metavar='INPUT_FILE',
-        help='read the XML data from INPUT_FILE'
-    )
-    tParser.add_argument(
         '-V', '--version',
         action='version',
         version=version_dict.get('version', 'ERROR: No version string found')
     )
+
     tParser.add_argument(
-        'astrOutputFiles',
+        'astrFiles',
         nargs='+',
-        metavar='OUTPUT_FILE',
-        help='write the output to OUTPUT_FILE'
+        metavar='FILES',
+        help="list of files. If argument '--template-layout' is not used the first file of the list will be used as input file."
     )
     tGroup = tParser.add_mutually_exclusive_group(required=False)
     tGroup.add_argument(
@@ -1997,6 +1993,13 @@ ________________________________________________________________________
         default='objcopy',
         metavar='FILE',
         help='Use FILE as the objcopy tool.'
+    )
+    tParser.add_argument(
+        '-t', '--template-layout',
+        dest='strHbootImageLayout',
+        required=False,
+        choices=['nai', 'nae'],
+        help='use nai or nae hboot image template-layout'
     )
     tParser.add_argument(
         '-d', '--objdump',
@@ -2042,6 +2045,7 @@ ________________________________________________________________________
     tParser.add_argument(
         '-s',
         '--sdram_split_offset',
+        # '--sdram-split-offset', ?
         dest='strSDRamSplitOffset',
         default="0x00000000",
         required=False,
@@ -2152,7 +2156,34 @@ ________________________________________________________________________
     #    print('>%s<' % strDesinationPath)
     # print ("===================================")
 
+    astrOutputFiles = None
+    strInputFile = None
+    if hasattr(tArgs, 'strHbootImageLayout'):
+        # use one of the template files
+        strHbootImageLayout = getattr(tArgs, 'strHbootImageLayout')
+        strInputFile = os.path.join(hbi_path, 'app', 'templates', '%s_tempalte.xml' % strHbootImageLayout.lower())
+        # all the files are output files
+        if len(tArgs.astrFiles) in [1, 2]:
+            astrOutputFiles = tArgs.astrFiles
+        else:
+            raise argparse.ArgumentError(
+                "Too few/many files were passed for this mode. (should be 1 or 2 but is %s)" % len(tArgs.astrFiles)
+            )
+
+    else:
+        print("Info: you are using an advanced mode. Consider using the parameter '--template-layout'.")
+        strHbootImageLayout = getattr(tArgs, 'strHbootImageLayout')
+        strInputFile = tArgs.astrFiles[0]
+        if not (strInputFile.endswith(".xml") or strInputFile.endswith(".XML")):
+            raise argparse.ArgumentError("For the advanced mode the first parameter must be a hboot-image-XMl.")
+        if len(tArgs.astrFiles) in [2, 3]:
+            astrOutputFiles = tArgs.astrFiles[1:]
+        else:
+            raise argparse.ArgumentError(
+                "Too few/many files were passed for this mode. (should be 2 or 3 but is %s)" % len(tArgs.astrFiles)
+            )
+
     tAppImg.process_app_image(
-        tArgs.strInputFile,
-        tArgs.astrOutputFiles
+        strInputFile,
+        astrOutputFiles
     )
