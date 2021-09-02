@@ -2136,7 +2136,7 @@ ________________________________________________________________________
 
     ulSDRamSplitOffset = int(tArgs.strSDRamSplitOffset, 0)
 
-    sdram_choices = [0x00000000, 0x00100000, 0x00200000, 0x00400000, 0x00800000,
+    sdram_choices = [0x00000000, 0x00400000, 0x00800000,
                      0x01000000, 0x02000000, 0x04000000, 0x08000000]
     if ulSDRamSplitOffset not in sdram_choices:
         raise ValueError("Wrong value selected for 'sdram_split_offset' chose from %s" % [hex(x) for x in sdram_choices] )
