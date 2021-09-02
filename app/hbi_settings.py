@@ -22,10 +22,27 @@
 
 import os
 import sys
+import platform
+
 
 file_path = os.path.realpath(__file__)
 cwd_ = os.path.dirname(os.path.dirname(os.path.dirname(file_path)))
+hbi_sources = os.path.dirname(os.path.dirname(file_path))
 
+plat = platform.system()
+if plat == "Windows":
+    elf_compiler_dir = os.path.join(hbi_sources, 'elf_compiler', 'arm-none-eabi-gcc', '4.9.3', 'bin')
+    OBJCPY = os.path.join(elf_compiler_dir, 'arm-none-eabi-objcopy')
+    OBJDUMP = os.path.join(elf_compiler_dir, 'arm-none-eabi-objdump')
+    READELF = os.path.join(elf_compiler_dir, 'arm-none-eabi-readelf')
+elif plat == "linux":
+    OBJCPY = "objcopy"
+    OBJDUMP = "objdump"
+    READELF = "readelf"
+else:
+    OBJCPY = "objcopy"
+    OBJDUMP = "objdump"
+    READELF = "readelf"
 
 hbi_path = cwd_
 sys.path.insert(0, hbi_path)

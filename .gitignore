@@ -1,1 +1,3 @@
 *.pyc
+arm-none-eabi-gcc
+/elf_compiler/arm-none-eabi-gcc.zip

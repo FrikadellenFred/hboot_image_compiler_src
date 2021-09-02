@@ -1987,14 +1987,6 @@ ________________________________________________________________________
         help='Build the image for netx type public NETX. (netx90 is mapped to %s)' % get_netx90_mapping()
     )
     tParser.add_argument(
-        '-c', '--objcopy',
-        dest='strObjCopy',
-        required=False,
-        default='objcopy',
-        metavar='FILE',
-        help='Use FILE as the objcopy tool.'
-    )
-    tParser.add_argument(
         '-t', '--template-layout',
         dest='strHbootImageLayout',
         required=False,
@@ -2002,10 +1994,20 @@ ________________________________________________________________________
         help='use nai or nae hboot image template-layout'
     )
     tParser.add_argument(
+        '-c', '--objcopy',
+        dest='strObjCopy',
+        required=False,
+        # default='objcopy',
+        default=OBJCPY,
+        metavar='FILE',
+        help='Use FILE as the objcopy tool.'
+    )
+    tParser.add_argument(
         '-d', '--objdump',
         dest='strObjDump',
         required=False,
-        default='objdump',
+        # default='objdump',
+        default=OBJDUMP,
         metavar='FILE',
         help='Use FILE as the objdump tool.'
     )
@@ -2013,7 +2015,8 @@ ________________________________________________________________________
         '-r', '--readelf',
         dest='strReadElf',
         required=False,
-        default='readelf',
+        # default='readelf',
+        default=READELF,
         metavar='FILE',
         help='Use FILE as the readelf tool.'
     )
@@ -2158,10 +2161,12 @@ ________________________________________________________________________
 
     astrOutputFiles = None
     strInputFile = None
-    if hasattr(tArgs, 'strHbootImageLayout'):
+    if getattr(tArgs, 'strHbootImageLayout') is not None:
         # use one of the template files
         strHbootImageLayout = getattr(tArgs, 'strHbootImageLayout')
-        strInputFile = os.path.join(hbi_path, 'app', 'templates', '%s_tempalte.xml' % strHbootImageLayout.lower())
+        strInputFile = os.path.join(hbi_sources, 'app', 'templates', '%s_template.xml' % strHbootImageLayout.lower())
+        if not os.path.exists(strInputFile):
+            raise FileNotFoundError("could not find template '%s'" % strInputFile)
         # all the files are output files
         if len(tArgs.astrFiles) in [1, 2]:
             astrOutputFiles = tArgs.astrFiles
