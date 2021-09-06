@@ -19,15 +19,24 @@
 # *   Free Software Foundation, Inc.,                                       *
 # *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
 # ***************************************************************************
-
+print("settings")
 import os
 import sys
 import platform
 
 
 file_path = os.path.realpath(__file__)
-cwd_ = os.path.dirname(os.path.dirname(os.path.dirname(file_path)))
-hbi_sources = os.path.dirname(os.path.dirname(file_path))
+
+
+if file_path.endswith(".py"):
+    hbi_sources = os.path.dirname(os.path.dirname(file_path))
+elif file_path.endswith(".pyc"):
+    hbi_sources = os.path.dirname(file_path)
+
+cwd_ = os.path.dirname(hbi_sources)
+
+print(file_path)
+print(hbi_sources)
 
 plat = platform.system()
 if plat == "Windows":
@@ -43,6 +52,10 @@ else:
     OBJCPY = "objcopy"
     OBJDUMP = "objdump"
     READELF = "readelf"
+
+# print(OBJCPY)
+# print(OBJDUMP)
+# print(READELF)
 
 hbi_path = cwd_
 sys.path.insert(0, hbi_path)

@@ -42,13 +42,11 @@ import tempfile
 import xml.dom.minidom
 import xml.etree.ElementTree
 
-# cwd_ = os.path.dirname(os.path.realpath(__file__))
-# project_path = os.path.dirname(cwd_)
-# sys.path.append(project_path)
-from hbi_settings import *
+from hbi_settings import READELF, OBJCPY, OBJDUMP, hbi_sources, hbi_path
 
 import hil_nxt_hboot_image_compiler.com.elf_support as elf_support
 from hil_nxt_hboot_image_compiler._version import get_versions
+
 version_dict = get_versions()
 # import hil_nxt_hboot_image_compiler.com.hboot_image_version as hboot_image_version
 
