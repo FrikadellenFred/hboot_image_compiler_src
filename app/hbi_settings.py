@@ -19,7 +19,6 @@
 # *   Free Software Foundation, Inc.,                                       *
 # *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
 # ***************************************************************************
-print("settings")
 import os
 import sys
 import platform
@@ -34,9 +33,6 @@ elif file_path.endswith(".pyc"):
     hbi_sources = os.path.dirname(file_path)
 
 cwd_ = os.path.dirname(hbi_sources)
-
-print(file_path)
-print(hbi_sources)
 
 plat = platform.system()
 if plat == "Windows":
