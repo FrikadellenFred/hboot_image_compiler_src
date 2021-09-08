@@ -2162,7 +2162,7 @@ ________________________________________________________________________
     if getattr(tArgs, 'strHbootImageLayout') is not None:
         # use one of the template files
         strHbootImageLayout = getattr(tArgs, 'strHbootImageLayout')
-        strInputFile = os.path.join(hbi_sources, 'app', 'templates', '%s_template.xml' % strHbootImageLayout.lower())
+        strInputFile = os.path.join(hbi_sources, 'templates', 'app', '%s_template.xml' % strHbootImageLayout.lower())
         if not os.path.exists(strInputFile):
             raise FileNotFoundError("could not find template '%s'" % strInputFile)
         # all the files are output files

@@ -201,7 +201,7 @@ else:
 
 if tArgs.strPatchTablePath is None:
 
-    path_patch_tables = os.path.join(module_path, "patch_tables")
+    path_patch_tables = os.path.join(hbi_sources, "patch_tables")
 
     tArgs.strPatchTablePath = os.path.join(
         path_patch_tables,
@@ -287,7 +287,7 @@ strInputFile = None
 if getattr(tArgs, 'strHbootImageLayout') is not None:
     # use one of the template files
     strHbootImageLayout = getattr(tArgs, 'strHbootImageLayout')
-    strInputFile = os.path.join(hbi_sources, 'com', 'templates', 'top_hboot_image_%s.xml' % strHbootImageLayout.lower())
+    strInputFile = os.path.join(hbi_sources, 'templates', 'com',  'top_hboot_image_%s.xml' % strHbootImageLayout.lower())
     if not os.path.exists(strInputFile):
         raise FileNotFoundError("could not find template '%s'" % strInputFile)
     # all the files are output files
