@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+    <!-- no end because the end is inside the following FW image. -->
+    <!-- alternative hardware configuration data located inside first 6kByte of alternative hboot_image  -->
+    <!-- Make sure that the HWC is exactly 6 kBytes long, as 2 kByte are reserved for Bootswitch -->
+    <!-- default location of alternative hboot_image is 0x00DF000 -->
+<HBootImage type="REGULAR" device="INTFLASH" has_header="True" has_end="False" offset="0x00DF000"
+    min_size="0x1800" min_size_fill="0xff" max_size="0x1800">
+
+  <!-- Use the magic cookie for the alternative image. -->
+  <Header set_flasher_parameters="true">
+    <Value index="0">0xf3ad9e00</Value>
+  </Header>
+
+  <Chunks>
+
+    <!-- Reserve 1.5 kByte space for HTBL. -->
+    <!-- It is required to have a fixed start address for the MWC identifier. -->
+    <!-- A fixed start address makes it easy to find the identifier. -->
+    <Skip absolute="0x00DF600" fill="0x48" />
+
+    <Include name="@hw_config">
+        <Parameter name="HWC_TYPE_HEX">4d5743</Parameter>           <!-- "MWC" as hex ascii codes -->
+        <Parameter name="HWC_TYPE">MWC</Parameter>                  <!-- "MWC" as ascii string -->
+        <Parameter name="HWC_INFO_ADDRESS">0x001DF608</Parameter>   <!-- Address of HWC info structure -->
+        <Parameter name="IS_MWC">1</Parameter>                      <!-- 1 for MWC -->
+        <Parameter name="BOOTSWITCH_IMAGE_START">0x1800</Parameter> <!-- BootSwitch ulImageStart -->
+        <Parameter name="BOOTSWITCH_IMAGE_SIZE">0x0800</Parameter>  <!-- BootSwitch ulImageSize -->
+        <Parameter name="BOOTSWITCH_ID_OFFSET">0x042c</Parameter>   <!-- BootSwitch ulOffsetToIdentifier -->
+    </Include>
+        
+    <!-- BootSwitch footer/ulAltBootResult at 0x20240 + 0x54 + 0x18 + 8= 0x202b4 -->
+    <Data>
+        <Concat address="0x000202b4"> 
+            <UInt32>
+                0,          <!-- ulAltBootResult      -->
+                0,          <!-- ulAltBootResultDummy -->
+                0xEFFA100B  <!-- ulEndCookie          -->
+            </UInt32>
+        </Concat>
+    </Data>
+    
+    <!-- Breakpoint used for MWC: Jump to a bx lr instruction in ROM at 0x1FF04 in netx90 -->
+    <Execute start_app="false" lock_firewall="false" activate_debugging="true" apply_firewall_settings="false">
+      <Address>0x1FF05</Address>
+    </Execute>
+
+    <!-- Skip over Bootswitch and FW File Header V3 until the offset 0x000E1200. -->
+    <SkipIncomplete absolute="0x000E1200" />
+
+  </Chunks>
+</HBootImage>
