@@ -74,15 +74,21 @@ tGroup.add_argument('--netx-type-public',
 tParser.add_argument('-c', '--objcopy',
                      dest='strObjCopy',
                      required=False,
-                     default='objcopy',
+                     default=OBJCPY,
                      metavar='FILE',
                      help='Use FILE as the objcopy tool.')
 tParser.add_argument('-d', '--objdump',
                      dest='strObjDump',
                      required=False,
-                     default='objdump',
+                     default=OBJDUMP,
                      metavar='FILE',
                      help='Use FILE as the objdump tool.')
+tParser.add_argument('-r', '--readelf',
+                     dest='strReadElf',
+                     required=False,
+                     default=READELF,
+                     metavar='FILE',
+                     help='Use FILE as the readelf tool.')
 tParser.add_argument('-k', '--keyrom',
                      dest='strKeyRomPath',
                      required=False,
@@ -95,12 +101,7 @@ tParser.add_argument('-p', '--patch-table',
                      default=None,
                      metavar='FILE',
                      help='Read the patch table from FILE.')
-tParser.add_argument('-r', '--readelf',
-                     dest='strReadElf',
-                     required=False,
-                     default='readelf',
-                     metavar='FILE',
-                     help='Use FILE as the readelf tool.')
+
 tParser.add_argument('-v', '--verbose',
                      dest='fVerbose',
                      required=False,
@@ -150,12 +151,25 @@ tParser.add_argument('--openssl-rand-off',
                      action='store_const', const=True,
                      metavar='SSLRAND',
                      help='Set openssl randomization true or false.')
-tParser.add_argument('strInputFile',
-                     metavar='FILE',
-                     help='Read the HBoot definition from FILE.')
-tParser.add_argument('strOutputFile',
-                     metavar='FILE',
-                     help='Write the HBoot image to FILE.')
+# tParser.add_argument('strInputFile',
+#                      metavar='FILE',
+#                      help='Read the HBoot definition from FILE.')
+# tParser.add_argument('strOutputFile',
+#                      metavar='FILE',
+#                      help='Write the HBoot image to FILE.')
+tParser.add_argument(
+    '-t', '--template-layout',
+    dest='strHbootImageLayout',
+    required=False,
+    choices=['hwc', 'mwc'],
+    help='use nai or nae hboot image template-layout'
+)
+tParser.add_argument(
+    'astrFiles',
+    nargs='+',
+    metavar='FILES',
+    help="list of files. If argument '--template-layout' is not used the first file of the list will be used as input file."
+)
 tArgs = tParser.parse_args()
 
 # Set the default for the patch table here.
@@ -267,5 +281,35 @@ tCompiler = HbootImage(
     opensslexe=tArgs.strOpensslExe,
     opensslrandoff=tArgs.fOpensslRandOff
 )
-tCompiler.parse_image(tArgs.strInputFile)
-tCompiler.write(tArgs.strOutputFile)
+
+astrOutputFiles = None
+strInputFile = None
+if getattr(tArgs, 'strHbootImageLayout') is not None:
+    # use one of the template files
+    strHbootImageLayout = getattr(tArgs, 'strHbootImageLayout')
+    strInputFile = os.path.join(hbi_sources, 'com', 'templates', 'top_hboot_image_%s.xml' % strHbootImageLayout.lower())
+    if not os.path.exists(strInputFile):
+        raise FileNotFoundError("could not find template '%s'" % strInputFile)
+    # all the files are output files
+    if len(tArgs.astrFiles) in [1]:
+        astrOutputFiles = tArgs.astrFiles[0]
+    else:
+        raise argparse.ArgumentError(
+            "Too few/many files were passed for this mode. (should be 1 but is %s)" % len(tArgs.astrFiles)
+        )
+
+else:
+    print("Info: you are using an advanced mode. Consider using the parameter '--template-layout'.")
+    strHbootImageLayout = getattr(tArgs, 'strHbootImageLayout')
+    strInputFile = tArgs.astrFiles[0]
+    if not (strInputFile.endswith(".xml") or strInputFile.endswith(".XML")):
+        raise argparse.ArgumentError("For the advanced mode the first parameter must be a hboot-image-XMl.")
+    if len(tArgs.astrFiles) in [2]:
+        astrOutputFiles = tArgs.astrFiles[1]
+    else:
+        raise argparse.ArgumentError(
+            "Too few/many files were passed for this mode. (should be 2 but is %s)" % len(tArgs.astrFiles)
+        )
+
+tCompiler.parse_image(strInputFile)
+tCompiler.write(astrOutputFiles)

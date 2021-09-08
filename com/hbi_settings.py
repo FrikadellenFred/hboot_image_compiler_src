@@ -19,13 +19,39 @@
 # *   Free Software Foundation, Inc.,                                       *
 # *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
 # ***************************************************************************
-
 import os
 import sys
+import platform
+
 
 file_path = os.path.realpath(__file__)
-cwd_ = os.path.dirname(os.path.dirname(os.path.dirname(file_path)))
 
+
+if file_path.endswith(".py"):
+    hbi_sources = os.path.dirname(os.path.dirname(file_path))
+elif file_path.endswith(".pyc"):
+    hbi_sources = os.path.dirname(file_path)
+
+cwd_ = os.path.dirname(hbi_sources)
+
+plat = platform.system()
+if plat == "Windows":
+    elf_compiler_dir = os.path.join(hbi_sources, 'elf_compiler', 'arm-none-eabi-gcc', '4.9.3', 'bin')
+    OBJCPY = os.path.join(elf_compiler_dir, 'arm-none-eabi-objcopy')
+    OBJDUMP = os.path.join(elf_compiler_dir, 'arm-none-eabi-objdump')
+    READELF = os.path.join(elf_compiler_dir, 'arm-none-eabi-readelf')
+elif plat == "linux":
+    OBJCPY = "objcopy"
+    OBJDUMP = "objdump"
+    READELF = "readelf"
+else:
+    OBJCPY = "objcopy"
+    OBJDUMP = "objdump"
+    READELF = "readelf"
+
+# print(OBJCPY)
+# print(OBJDUMP)
+# print(READELF)
 
 hbi_path = cwd_
 sys.path.insert(0, hbi_path)
