@@ -42,7 +42,7 @@ import tempfile
 import xml.dom.minidom
 import xml.etree.ElementTree
 
-from hbi_settings import READELF, OBJCPY, OBJDUMP, hbi_sources, hbi_path
+from hbi_settings import READELF, OBJCPY, OBJDUMP, hbi_sources
 
 import hil_nxt_hboot_image_compiler.com.elf_support as elf_support
 from hil_nxt_hboot_image_compiler._version import get_versions
@@ -54,6 +54,13 @@ version_dict = get_versions()
 if __name__ != '__main__':
     # No -> import the SCons module.
     import SCons.Script
+
+
+sdram_choices = [0x00000000, 0x00400000, 0x00800000,
+                 0x01000000, 0x02000000, 0x04000000, 0x08000000]
+
+sdram_choices_hex_str = ["0x%08x" % num for num in sdram_choices]
+
 
 ROMLOADER_CHIPTYP_NETX90_MPW = 10
 ROMLOADER_CHIPTYP_NETX90 = 13
@@ -1879,68 +1886,30 @@ def ApplyToEnv(env):
 
 
 if __name__ == '__main__':
+
+    executed_file = os.path.split(sys.argv[0])[-1]
     # todo fill this properly
     hboot_image_compiler_app_epilog = f'''
 
-Example for creating a nai and nae image
-========================================   
- 
-app_image.xml (input xml)
-_________________________
-    <AppImage>
-        <!-- The start part in INTFLASH2. -->
-        <data padding_pre_size="0" headeraddress="0">
-            <File name="@tElf" segments=".header,.code"/>
-        </data>
-        <!-- Code/data in the external flash. -->
-        <data headeraddress="0x64300000">
-            <File name="@tElf" segments=".code_SDRAM1,.code_SDRAM2"/>
-        </data>
-    </AppImage>
-
-
-example_command
-(<HBOOT_IMAGE_COMPILER_APP> can be the executable or the python script):
-________________________________________________________________________
-    $ <HBOOT_IMAGE_COMPILER_APP>
-        app_image.xml app_image.nai app_iamge.nae
-        -A tElf=example.elf 
-        -c arm-none-eabi-objcopy.exe
-        -d arm-none-eabi-objdump.exe
-        -r arm-none-eabi-readelf.exe
-
-
 Example for creating a nai image
 ================================
- 
-app_image.xml (input xml)
-_________________________
-    <AppImage>
-        <!-- The start part in INTFLASH2. -->
-        <data padding_pre_size="0" headeraddress="0">
-            <File name="@tElf" segments=".header,.code"/>
-        </data>
-    </AppImage>
-
-
-example_command 
-(<HBOOT_IMAGE_COMPILER_APP> can be the executable or the python script):
-________________________________________________________________________
-    $ <HBOOT_IMAGE_COMPILER_APP>
-        app_image.xml app_image.nai
-        -A tElf=example.elf 
-        -c arm-none-eabi-objcopy.exe
-        -d arm-none-eabi-objdump.exe
-        -r arm-none-eabi-readelf.exe        
-'''
+    $ %s -t nai -A tElf=example.elf app_image.nai
+    
+Example for creating a nai and nae image
+========================================   
+    $ %s -t nae -A tElf=example.elf app_image.nai app_image.nae 
+''' % (executed_file, executed_file)
 
     tParser = argparse.ArgumentParser(
         formatter_class=argparse.RawDescriptionHelpFormatter,
-        description='Translate a Hboot-Image-XML file for netx90-APP image description file.'
+        description='Translate a Hboot-Image-XML file for netx90-APP image description file',
+        epilog=hboot_image_compiler_app_epilog,
+        add_help=False
     )
-
+    tParser.add_argument('-h', '--help', action='help', default=argparse.SUPPRESS,
+                             help='Show this help message and exit')
     tParser.add_argument(
-        '-V', '--version',
+        '-v', '--version',
         action='version',
         version=version_dict.get('version', 'ERROR: No version string found')
     )
@@ -1949,9 +1918,22 @@ ________________________________________________________________________
         'astrFiles',
         nargs='+',
         metavar='FILES',
-        help="list of files. If argument '--template-layout' is not used the first file of the list will be used as input file."
+        help="List of files. If argument '--template-layout' is not used the first file of the list will be used as input file"
     )
     tGroup = tParser.add_mutually_exclusive_group(required=False)
+    tGroup.add_argument(
+        '-nt', '--netx-type-public',
+        dest='strNetxType',
+        default='netx90',
+
+        choices=[
+            'netx90',
+            'netx90_rev1',
+        ],
+        metavar="NETX",
+        help='Build the image for netx type public NETX. Possible values are: %s. (netx90 is mapped to %s)' %
+             (['netx90', 'netx90_rev1'], get_netx90_mapping())
+    )
     tGroup.add_argument(
         '-n', '--netx-type',
         dest='strNetxType',
@@ -1973,23 +1955,14 @@ ________________________________________________________________________
         help=argparse.SUPPRESS,
         # help='Build the image for netx type NETX.'
     )
-    tGroup.add_argument(
-        '--netx-type-public',
-        dest='strNetxType',
-        default='netx90',
 
-        choices=[
-            'netx90',
-            'netx90_rev1',
-        ],
-        help='Build the image for netx type public NETX. (netx90 is mapped to %s)' % get_netx90_mapping()
-    )
     tParser.add_argument(
         '-t', '--template-layout',
         dest='strHbootImageLayout',
         required=False,
         choices=['nai', 'nae'],
-        help='use nai or nae hboot image template-layout'
+        metavar="LAYOUT",
+        help='Use nai or nae hboot image template-layout. Possible values are: %s' % ['nai', 'nae']
     )
     tParser.add_argument(
         '-c', '--objcopy',
@@ -1998,7 +1971,8 @@ ________________________________________________________________________
         # default='objcopy',
         default=OBJCPY,
         metavar='FILE',
-        help='Use FILE as the objcopy tool.'
+        # help='Use FILE as the objcopy tool.'
+        help=argparse.SUPPRESS
     )
     tParser.add_argument(
         '-d', '--objdump',
@@ -2007,7 +1981,8 @@ ________________________________________________________________________
         # default='objdump',
         default=OBJDUMP,
         metavar='FILE',
-        help='Use FILE as the objdump tool.'
+        # help='Use FILE as the objdump tool.'
+        help=argparse.SUPPRESS
     )
     tParser.add_argument(
         '-r', '--readelf',
@@ -2016,15 +1991,16 @@ ________________________________________________________________________
         # default='readelf',
         default=READELF,
         metavar='FILE',
-        help='Use FILE as the readelf tool.'
+        # help='Use FILE as the readelf tool.'
+        help=argparse.SUPPRESS
     )
     tParser.add_argument(
         '-A', '--alias',
         dest='astrAliases',
         required=False,
         action='append',
-        metavar='ALIAS=FILE',
-        help='Add an alias in the form ALIAS=FILE.'
+        metavar='ALIAS=VALUE',
+        help='Provide a value for an alias in the form of ALIAS=VALUE'
     )
     tParser.add_argument(
         '-I', '--include',
@@ -2032,7 +2008,8 @@ ________________________________________________________________________
         required=False,
         action='append',
         metavar='PATH',
-        help='Add PATH to the list of include paths.'
+        # help='Add PATH to the list of include paths.'
+        help=argparse.SUPPRESS
     )
     tParser.add_argument(
         '-k', '--keyrom',
@@ -2041,7 +2018,7 @@ ________________________________________________________________________
         default=None,
         metavar='FILE',
         # help='Read the keyrom data from FILE.'
-        help = argparse.SUPPRESS
+        help=argparse.SUPPRESS
     )
     tParser.add_argument(
         '-s',
@@ -2051,15 +2028,17 @@ ________________________________________________________________________
         default="0x00000000",
         required=False,
         metavar="SDRAM",
-        help='Address offset for COM CPU to access APP side SDRAM. (default: "0x00000000")'
+        help='Address offset for COM CPU to access APP side SDRAM.'
+             ' (default: "0x00000000") Possible values are: %s' % sdram_choices_hex_str
     )
     tParser.add_argument(
-        '-v',
+        '-V',
         '--verbose',
         dest='fVerbose',
         action='store_true',
         default=False,
-        help='be verbose'
+        # help='show debug messages',
+        help=argparse.SUPPRESS
     )
     tParser.add_argument(
         '--openssl-exe',
@@ -2079,13 +2058,6 @@ ________________________________________________________________________
         metavar='SSLRAND',
         # help='Set openssl randomization true or false.'
         help=argparse.SUPPRESS
-    )
-
-    tParser.add_argument(
-        '--show-example',
-        action='version',
-        version=hboot_image_compiler_app_epilog,
-        help="show examples to use this tool"
     )
 
     tArgs = tParser.parse_args(args=['--help'] if len(sys.argv) < 2 else None)  # prints help if args are less than 2
@@ -2134,8 +2106,7 @@ ________________________________________________________________________
 
     ulSDRamSplitOffset = int(tArgs.strSDRamSplitOffset, 0)
 
-    sdram_choices = [0x00000000, 0x00400000, 0x00800000,
-                     0x01000000, 0x02000000, 0x04000000, 0x08000000]
+
     if ulSDRamSplitOffset not in sdram_choices:
         raise ValueError("Wrong value selected for 'sdram_split_offset' chose from %s" % [hex(x) for x in sdram_choices] )
 
