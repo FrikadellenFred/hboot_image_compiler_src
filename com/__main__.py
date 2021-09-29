@@ -31,13 +31,59 @@ from hil_nxt_hboot_image_compiler.com.hboot_image import HbootImage
 module_path = os.path.dirname(hil_nxt_hboot_image_compiler.__file__)
 version_dict = get_versions()
 
-tParser = argparse.ArgumentParser(usage='hboot_image [options]')
+executed_file = os.path.split(sys.argv[0])[-1]
+# todo fill this properly
+hboot_image_compiler_com_epilog = f'''
+
+Example for creating a hwc image
+================================
+    $ hboot_image_compiler_com.exe hwc_hboot.hwc -t hwc -nt netx90 -A hw_config="hwc_hboot.xml"
+
+Example for creating a mwc image
+================================
+    $ hboot_image_compiler_com.exe hwc_hboot.hwc -t mwc -nt netx90 -A hw_config="hwc_hboot.xml"
+    
+'''
+
+
+tParser = argparse.ArgumentParser(
+    usage='hboot_image [options]',
+    epilog=hboot_image_compiler_com_epilog,
+    formatter_class=argparse.RawTextHelpFormatter,
+    add_help=False
+)
 tParser.add_argument(
+    '-h', '--help',
+    action='help',
+    default=argparse.SUPPRESS,
+    help='Show this help message and exit'
+)
+tParser.add_argument(
+    '-v',
     '--version',
     action='version',
-    version=version_dict.get('version', 'ERROR: no version string found!')
+    version=version_dict.get('version', 'ERROR: no version string found!'),
+    help="Show program's version number and exit"
 )
-tGroup = tParser.add_mutually_exclusive_group(required=True)
+
+tGroup = tParser.add_mutually_exclusive_group(required=False)
+tGroup.add_argument('-nt', '--netx-type-public',
+                    dest='strNetxType',
+                    choices=[
+                         'netx90',
+                         # 'netx90_rev0',
+                         'netx90_rev1',
+                         # 'netx90_rev2',
+                         # 'netx90_mpw',
+                         # 'NETX56',
+                         # 'NETX4000_RELAXED',
+                         # 'NETX4000',
+                         # 'NETX4100'
+                     ],
+                    default='netx90',
+                    metavar='NETX',
+                    help='Build the image for netx type public NETX. By default the newest netx90 type is selected.'
+                         ' Possible values are: %s' % ['netx90', 'netx90_rev1'])
 tGroup.add_argument('-n', '--netx-type',
                     dest='strNetxType',
                     choices=[
@@ -56,101 +102,103 @@ tGroup.add_argument('-n', '--netx-type',
                     help=argparse.SUPPRESS,
                     # help='Build the image for netx type NETX.'
                     )
-tGroup.add_argument('--netx-type-public',
-                    dest='strNetxType',
-                    choices=[
-                         'netx90',
-                         # 'netx90_rev0',
-                         'netx90_rev1',
-                         # 'netx90_rev2',
-                         # 'netx90_mpw',
-                         # 'NETX56',
-                         # 'NETX4000_RELAXED',
-                         # 'NETX4000',
-                         # 'NETX4100'
-                     ],
-                    # metavar='NETX',
-                    help='Build the image for netx type public NETX.')
+
 tParser.add_argument('-c', '--objcopy',
                      dest='strObjCopy',
                      required=False,
                      default=OBJCPY,
                      metavar='FILE',
-                     help='Use FILE as the objcopy tool.')
+                     # help='Use FILE as the objcopy tool.',
+                     help=argparse.SUPPRESS
+                     )
 tParser.add_argument('-d', '--objdump',
                      dest='strObjDump',
                      required=False,
                      default=OBJDUMP,
                      metavar='FILE',
-                     help='Use FILE as the objdump tool.')
+                     # help='Use FILE as the objdump tool.',
+                     help=argparse.SUPPRESS)
 tParser.add_argument('-r', '--readelf',
                      dest='strReadElf',
                      required=False,
                      default=READELF,
                      metavar='FILE',
-                     help='Use FILE as the readelf tool.')
+                     # help='Use FILE as the readelf tool.',
+                     help=argparse.SUPPRESS)
 tParser.add_argument('-k', '--keyrom',
                      dest='strKeyRomPath',
                      required=False,
                      default=None,
                      metavar='FILE',
-                     help='Read the keyrom data from FILE.')
+                     # help='Read the keyrom data from FILE.',
+                     help=argparse.SUPPRESS)
 tParser.add_argument('-p', '--patch-table',
                      dest='strPatchTablePath',
                      required=False,
                      default=None,
                      metavar='FILE',
-                     help='Read the patch table from FILE.')
+                     # help='Read the patch table from FILE.',
+                     help=argparse.SUPPRESS)
 
-tParser.add_argument('-v', '--verbose',
+tParser.add_argument('-V', '--verbose',
                      dest='fVerbose',
                      required=False,
                      default=False,
                      action='store_const', const=True,
-                     help='Be more verbose.')
+                     # help='Be more verbose.',
+                     help=argparse.SUPPRESS)
 tParser.add_argument('-A', '--alias',
                      dest='astrAliases',
                      required=False,
                      action='append',
-                     metavar='ALIAS=FILE',
-                     help='Add an alias in the form ALIAS=FILE.')
+                     metavar='ALIAS=VALUE',
+                     help='Provide a value for an alias in the form of ALIAS=VALUE')
 tParser.add_argument('-D', '--define',
                      dest='astrDefines',
                      required=False,
                      action='append',
                      metavar='NAME=VALUE',
-                     help='Add a define in the form NAME=VALUE.')
+                     # help='Add a define in the form NAME=VALUE.',
+                     help=argparse.SUPPRESS)
 tParser.add_argument('-I', '--include',
                      dest='astrIncludePaths',
                      required=False,
                      action='append',
                      metavar='PATH',
-                     help='Add PATH to the list of include paths.')
+                     # help='Add PATH to the list of include paths.',
+                     help=argparse.SUPPRESS)
 tParser.add_argument('-S', '--sniplib',
                      dest='astrSnipLib',
                      required=False,
                      action='append',
                      metavar='PATH',
-                     help='Add PATH to the list of sniplib paths.')
+                     # help='Add PATH to the list of sniplib paths.',
+                     help=argparse.SUPPRESS)
 tParser.add_argument('--openssl-options',
                      dest='astrOpensslOptions',
                      required=False,
                      action='append',
                      metavar='SSLOPT',
-                     help='Add SSLOPT to the arguments for OpenSSL.')
+                     # help='Add SSLOPT to the arguments for OpenSSL.',
+                     help=argparse.SUPPRESS
+                     )
 tParser.add_argument('--openssl-exe',
                      dest='strOpensslExe',
                      required=False,
                      default='openssl',
                      metavar='PATH',
-                     help='Add individual OpenSSL Path.')
+                     # help='Add individual OpenSSL Path.',
+                     help=argparse.SUPPRESS
+                     )
 tParser.add_argument('--openssl-rand-off',
                      dest='fOpensslRandOff',
                      required=False,
                      default=False,
                      action='store_const', const=True,
                      metavar='SSLRAND',
-                     help='Set openssl randomization true or false.')
+                     # help='Set openssl randomization true or false.',
+                     help=argparse.SUPPRESS
+                     )
 # tParser.add_argument('strInputFile',
 #                      metavar='FILE',
 #                      help='Read the HBoot definition from FILE.')
@@ -161,14 +209,15 @@ tParser.add_argument(
     '-t', '--template-layout',
     dest='strHbootImageLayout',
     required=False,
+    metavar="LAYOUT",
     choices=['hwc', 'mwc'],
-    help='use nai or nae hboot image template-layout'
+    help='Use hwc or mwc hboot image template-layout. Possible values are: %s' % ['hwc', 'mwc']
 )
 tParser.add_argument(
     'astrFiles',
     nargs='+',
     metavar='FILES',
-    help="list of files. If argument '--template-layout' is not used the first file of the list will be used as input file."
+    help="List of files. If argument '--template-layout' is not used the first file of the list will be used as input file"
 )
 tArgs = tParser.parse_args()
 
@@ -185,7 +234,8 @@ atDefaultPatchTables = {
     'NETX4100': 'hboot_netx4000_patch_table.xml'
 }
 
-if tArgs.strNetxType == 'netx90':
+# change netx_type to internal namings
+if tArgs.strNetxType == 'netx90':  # netx90 is always mapped to newest netx90_revx
     strNetxType = 'NETX90B'
 elif tArgs.strNetxType == 'netx90_rev0':
     strNetxType = 'NETX90'
@@ -217,7 +267,7 @@ if tArgs.astrAliases is not None:
         if tMatch is None:
             raise Exception(
                 'Invalid alias definition: "%s". '
-                'It must be "ALIAS=FILE" instead.' % strAliasDefinition
+                'It must be "ALIAS=VALUE" instead.' % strAliasDefinition
             )
         strAlias = tMatch.group(1)
         strFile = tMatch.group(2)
