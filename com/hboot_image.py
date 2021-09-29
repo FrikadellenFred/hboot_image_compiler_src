@@ -4512,10 +4512,10 @@ class HbootImage:
             atData.extend([0] * sizPadding)
 
             if iKeyTyp_1ECC_2RSA == 1:
-                sizKeyInDwords = len(atAttr['Qx']) / 4
+                sizKeyInDwords = int(len(atAttr['Qx']) / 4)
                 sizSignatureInDwords = 2 * sizKeyInDwords
             elif iKeyTyp_1ECC_2RSA == 2:
-                sizKeyInDwords = len(atAttr['mod']) / 4
+                sizKeyInDwords = int(len(atAttr['mod']) / 4)
                 sizSignatureInDwords = sizKeyInDwords
 
             # Convert the padded data to an array.
