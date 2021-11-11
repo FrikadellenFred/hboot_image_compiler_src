@@ -2134,7 +2134,7 @@ Example for creating a nai and nae image
     if getattr(tArgs, 'strHbootImageLayout') is not None:
         # use one of the template files
         strHbootImageLayout = getattr(tArgs, 'strHbootImageLayout')
-        strInputFile = os.path.join(hbi_sources, 'templates_old', 'app', '%s_template.xml' % strHbootImageLayout.lower())
+        strInputFile = os.path.join(hbi_sources, 'templates', 'app', '%s_template.xml' % strHbootImageLayout.lower())
         if not os.path.exists(strInputFile):
             raise FileNotFoundError("could not find template '%s'" % strInputFile)
         # all the files are output files
