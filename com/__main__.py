@@ -25,11 +25,11 @@ import re
 from hbi_settings import *
 
 import hil_nxt_hboot_image_compiler
-from hil_nxt_hboot_image_compiler._version import get_versions
-from hil_nxt_hboot_image_compiler.com.hboot_image import HbootImage
 
+from hil_nxt_hboot_image_compiler.com.hboot_image import HbootImage
+from hil_nxt_hboot_image_compiler.nxt_version import get_version_strings
+__version__, __revision__, version_clean = get_version_strings()
 module_path = os.path.dirname(hil_nxt_hboot_image_compiler.__file__)
-version_dict = get_versions()
 
 executed_file = os.path.split(sys.argv[0])[-1]
 # todo fill this properly
@@ -62,7 +62,7 @@ tParser.add_argument(
     '-v',
     '--version',
     action='version',
-    version=version_dict.get('version', 'ERROR: no version string found!'),
+    version=__version__,
     help="Show program's version number and exit"
 )
 

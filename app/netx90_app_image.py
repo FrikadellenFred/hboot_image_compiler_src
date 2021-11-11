@@ -45,9 +45,10 @@ import xml.etree.ElementTree
 from hbi_settings import READELF, OBJCPY, OBJDUMP, hbi_sources
 
 import hil_nxt_hboot_image_compiler.com.elf_support as elf_support
-from hil_nxt_hboot_image_compiler._version import get_versions
+from hil_nxt_hboot_image_compiler.nxt_version import get_version_strings
+__version__, __revision__, version_clean = get_version_strings()
 
-version_dict = get_versions()
+
 # import hil_nxt_hboot_image_compiler.com.hboot_image_version as hboot_image_version
 
 # Is this a standalone script?
@@ -1911,7 +1912,7 @@ Example for creating a nai and nae image
     tParser.add_argument(
         '-v', '--version',
         action='version',
-        version=version_dict.get('version', 'ERROR: No version string found')
+        version=__version__
     )
 
     tParser.add_argument(
@@ -2133,7 +2134,7 @@ Example for creating a nai and nae image
     if getattr(tArgs, 'strHbootImageLayout') is not None:
         # use one of the template files
         strHbootImageLayout = getattr(tArgs, 'strHbootImageLayout')
-        strInputFile = os.path.join(hbi_sources, 'templates', 'app', '%s_template.xml' % strHbootImageLayout.lower())
+        strInputFile = os.path.join(hbi_sources, 'templates_old', 'app', '%s_template.xml' % strHbootImageLayout.lower())
         if not os.path.exists(strInputFile):
             raise FileNotFoundError("could not find template '%s'" % strInputFile)
         # all the files are output files
