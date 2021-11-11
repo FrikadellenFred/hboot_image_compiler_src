@@ -32,6 +32,21 @@ if file_path.endswith(".py"):
 elif file_path.endswith(".pyc"):
     hbi_sources = os.path.dirname(file_path)
 
+path_patch_tables = os.path.join(hbi_sources, "patch_tables")
+
+# Set the default for the patch table here.
+atDefaultPatchTables = {
+    'NETX56': 'hboot_netx56_patch_table.xml',
+    'NETX90': 'hboot_netx90_patch_table.xml',
+    'NETX90B': 'hboot_netx90b_patch_table.xml',
+    'NETX90C': 'hboot_netx90b_patch_table.xml',  # c also uses patch table b
+    'NETX90D': 'hboot_netx90d_patch_table.xml',
+    'NETX90_MPW': 'hboot_netx90_mpw_patch_table.xml',
+    'NETX4000_RELAXED': 'hboot_netx4000_relaxed_patch_table.xml',
+    'NETX4000': 'hboot_netx4000_patch_table.xml',
+    'NETX4100': 'hboot_netx4000_patch_table.xml'
+}
+
 cwd_ = os.path.dirname(hbi_sources)
 
 plat = platform.system()

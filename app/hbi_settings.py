@@ -32,6 +32,8 @@ if file_path.endswith(".py"):
 elif file_path.endswith(".pyc"):
     hbi_sources = os.path.dirname(file_path)
 
+path_patch_tables = os.path.join(hbi_sources, "patch_tables")
+
 cwd_ = os.path.dirname(hbi_sources)
 
 plat = platform.system()
