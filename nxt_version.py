@@ -92,7 +92,7 @@ class VersionHandler:
             self.version_dict['patch'] = self.patch
         else:
             # throw exception if the tag style does not match
-            raise AttributeError("The tool does not have a valid version string!")
+            raise AttributeError("The tool does not have a valid version string! '%s'" % self.version_dict['version'])
 
     def get_time_sting(self):
         # get the time string from version dict
