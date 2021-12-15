@@ -1844,7 +1844,7 @@ class HbootImage:
         self.__get_data_contents(tChunkNode, atData, True)
         strData = atData['data']
         pulLoadAddress = atData['load_address']
-w
+
         if len(strData) == 0:
             raise Exception('Empty data chunk!')
 
