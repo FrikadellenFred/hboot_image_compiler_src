@@ -119,8 +119,7 @@ class HbootImage:
     __sizHashDw = None
 
     __XmlKeyromContents = None
-    __cfg_openssl = r'C:\Users\frederikwoermann\Documents\_netx_tools\nxt_butler\modules\nxt.llsv.verify.secure_boot\ext\resources\openssl\openssl.exe'
-    # __cfg_openssl = 'openssl'
+    __cfg_openssl = None
     __cfg_openssloptions = None
     __fOpensslRandOff = False
 
@@ -160,7 +159,7 @@ class HbootImage:
     def __init__(self, tEnv, strNetxType, **kwargs):
         strPatchDefinition = None
         strKeyromFile = None
-        strCfgOpenssl = None
+        strCfgOpenssl = 'openssl'
         astrIncludePaths = []
         astrSnippetSearchPaths = []
         atKnownFiles = {}
