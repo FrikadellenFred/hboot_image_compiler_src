@@ -219,6 +219,15 @@ tParser.add_argument(
     metavar='FILES',
     help="List of files. If argument '--template-layout' is not used the first file of the list will be used as input file"
 )
+tParser.add_argument(
+    '-a', '--append-file',
+    dest='strFileToAppend',
+    required=False,
+    metavar='FILE',
+    help="A binary file to be appended to the output file."
+)
+
+
 tArgs = tParser.parse_args()
 
 # Set the default for the patch table here.
@@ -362,4 +371,4 @@ else:
         )
 
 tCompiler.parse_image(strInputFile)
-tCompiler.write(astrOutputFiles)
+tCompiler.write(astrOutputFiles, strFileToAppend=tArgs.strFileToAppend)

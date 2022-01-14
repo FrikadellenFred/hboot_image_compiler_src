@@ -6021,7 +6021,7 @@ class HbootImage:
 
         return ucCrc
 
-    def write(self, strTargetPath):
+    def write(self, strTargetPath, strFileToAppend=None):
         """ Write all compiled chunks to the file strTargetPath . """
 
         if self.__tImageType == self.__IMAGE_TYPE_SECMEM:
@@ -6198,6 +6198,13 @@ class HbootImage:
             atEndMarker.tofile(tFile)
         if atFiller is not None:
             atFiller.tofile(tFile)
+        if strFileToAppend is not None:
+            print("Info: Appending the contents of the file %s to the output file." % (strFileToAppend))
+            tInputFile = open(strFileToAppend, 'rb')
+            acBin = tInputFile.read()
+            tInputFile.close()
+            tFile.write(acBin)
+            
         tFile.close()
 
     def dependency_scan(self, strInput):
