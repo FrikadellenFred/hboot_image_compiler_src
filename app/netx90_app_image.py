@@ -1886,6 +1886,13 @@ def ApplyToEnv(env):
     env['BUILDERS']['AppImage'] = app_image_bld
 
 
+def print_args(args):
+    print("Run hboot image compiler app with arguments:")
+    for key, value in args.__dict__.items():
+        print("    %s: %s" % (key, value))
+    print("")
+
+
 if __name__ == '__main__':
 
     executed_file = os.path.split(sys.argv[0])[-1]
@@ -1894,11 +1901,11 @@ if __name__ == '__main__':
 
 Example for creating a nai image
 ================================
-    $ %s -t nai -A tElf=example.elf app_image.nai
+    $ %s -t nai -A tElf=example.elf  -nt netx90 app_image.nai
     
 Example for creating a nai and nae image
 ========================================   
-    $ %s -t nae -A tElf=example.elf app_image.nai app_image.nae 
+    $ %s -t nae -A tElf=example.elf -nt netx90 app_image.nai app_image.nae 
 ''' % (executed_file, executed_file)
 
     tParser = argparse.ArgumentParser(
@@ -2062,6 +2069,9 @@ Example for creating a nai and nae image
     )
 
     tArgs = tParser.parse_args(args=['--help'] if len(sys.argv) < 2 else None)  # prints help if args are less than 2
+    print("HBoot Image Compiler APP")
+    print(__version__)
+    print_args(tArgs)
 
     # Use a default logging level of "WARNING". Change it to "DEBUG" in
     # verbose mode.
