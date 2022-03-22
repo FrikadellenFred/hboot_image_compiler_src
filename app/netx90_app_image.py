@@ -1901,11 +1901,33 @@ if __name__ == '__main__':
 
 Example for creating a nai image
 ================================
-    $ %s -t nai -A tElf=example.elf  -nt netx90 app_image.nai
+    $ %s
+    -t
+    nai
+    -A tElf=example.elf
+    -A segment_intflash=""
+    -nt netx90 app_image.nai
     
+    Examples for Aliases:
+    --------------------
+    * -A segment_intflash="": preload every segment from the linker file to the intflash
+    * -A segment_intflash=",": (empty list) not allowed!
+        
 Example for creating a nai and nae image
 ========================================   
-    $ %s -t nae -A tElf=example.elf -nt netx90 app_image.nai app_image.nae 
+    $ %s
+     -t nae
+     -A tElf=example.elf
+     -A segment_intflash=".header,.code"
+     -A segments_extflash=".code_SDRAM1,.code_SDRAM2"
+     -nt netx90 app_image.nai app_image.nae 
+    
+    Examples for Aliases:
+    --------------------
+     * -A segment_intflash=".header,.code": preloaded the segments ".header,.code" from the linker file to the intflash
+     * -A segment_intflash=",": (empty list) not allowed!
+     * -A segments_extflash=".code_SDRAM1,.code_SDRAM2": preload the segments ".code_SDRAM1,.code_SDRAM2" from the
+      linker file to the SDRAM
 ''' % (executed_file, executed_file)
 
     tParser = argparse.ArgumentParser(
