@@ -227,8 +227,12 @@ tParser.add_argument(
     help="A binary file to be appended to the output file."
 )
 
+if len(sys.argv) == 1:
+    tParser.print_help()
+    sys.exit(1)
 
 tArgs = tParser.parse_args()
+print(__version__)
 
 # Set the default for the patch table here.
 atDefaultPatchTables = {
