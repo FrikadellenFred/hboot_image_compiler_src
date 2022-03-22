@@ -46,6 +46,13 @@ Example for creating a mwc image
 '''
 
 
+def print_args(args):
+    print("Run hboot image compiler app with arguments:")
+    for key, value in args.__dict__.items():
+        print("    %s: %s" % (key, value))
+    print("")
+
+
 tParser = argparse.ArgumentParser(
     usage='hboot_image [options]',
     epilog=hboot_image_compiler_com_epilog,
@@ -227,12 +234,11 @@ tParser.add_argument(
     help="A binary file to be appended to the output file."
 )
 
-if len(sys.argv) == 1:
-    tParser.print_help()
-    sys.exit(1)
 
-tArgs = tParser.parse_args()
+tArgs = tParser.parse_args(args=['--help'] if len(sys.argv) < 2 else None)
+print("HBoot Image Compiler COM")
 print(__version__)
+print_args(tArgs)
 
 # Set the default for the patch table here.
 atDefaultPatchTables = {
