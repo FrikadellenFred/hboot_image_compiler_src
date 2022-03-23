@@ -32,16 +32,19 @@ __version__, __revision__, version_clean = get_version_strings()
 module_path = os.path.dirname(hil_nxt_hboot_image_compiler.__file__)
 
 executed_file = os.path.split(sys.argv[0])[-1]
-# todo fill this properly
 hboot_image_compiler_com_epilog = f'''
 
-Example for creating a hwc image
-================================
+Example for creating a hwc HBoot image
+======================================
     $ hboot_image_compiler_com.exe hwc_hboot.hwc -t hwc -nt netx90 -A hw_config="hwc_hboot.xml"
+    
+    * -A hw_config="hwc_hboot.xml": Specifies path to a file containing the hardware configuration.
 
-Example for creating a mwc image
-================================
+Example for creating a mwc HBoot image
+======================================
     $ hboot_image_compiler_com.exe hwc_hboot.hwc -t mwc -nt netx90 -A hw_config="hwc_hboot.xml"
+    
+    * -A hw_config="hwc_hboot.xml": Specifies path to a file containing the hardware configuration.
     
 '''
 
@@ -89,7 +92,7 @@ tGroup.add_argument('-nt', '--netx-type-public',
                      ],
                     default='netx90',
                     metavar='NETX',
-                    help='Build the image for netx type public NETX. By default the newest netx90 type is selected.'
+                    help='Build the image for netX type public NETX. By default the newest netx90 type is selected.'
                          ' Possible values are: %s' % ['netx90', 'netx90_rev1'])
 tGroup.add_argument('-n', '--netx-type',
                     dest='strNetxType',
@@ -218,7 +221,7 @@ tParser.add_argument(
     required=False,
     metavar="LAYOUT",
     choices=['hwc', 'mwc'],
-    help='Use hwc or mwc hboot image template-layout. Possible values are: %s' % ['hwc', 'mwc']
+    help='Use hwc or mwc HBoot image template-layout. Possible values are: %s' % ['hwc', 'mwc']
 )
 tParser.add_argument(
     'astrFiles',
@@ -236,7 +239,7 @@ tParser.add_argument(
 
 
 tArgs = tParser.parse_args(args=['--help'] if len(sys.argv) < 2 else None)
-print("HBoot Image Compiler COM")
+print("HBoot image compiler COM")
 print(__version__)
 print_args(tArgs)
 
@@ -372,7 +375,7 @@ else:
     strHbootImageLayout = getattr(tArgs, 'strHbootImageLayout')
     strInputFile = tArgs.astrFiles[0]
     if not (strInputFile.endswith(".xml") or strInputFile.endswith(".XML")):
-        raise argparse.ArgumentError("For the advanced mode the first parameter must be a hboot-image-XMl.")
+        raise argparse.ArgumentError("For the advanced mode the first parameter must be a HBoot image XMl file.")
     if len(tArgs.astrFiles) in [2]:
         astrOutputFiles = tArgs.astrFiles[1]
     else:

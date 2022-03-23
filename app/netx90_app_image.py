@@ -1899,40 +1899,48 @@ if __name__ == '__main__':
     # todo fill this properly
     hboot_image_compiler_app_epilog = f'''
 
-Example for creating a nai image
-================================
+Example for creating a nai HBoot image
+======================================
     $ %s
-    -t
-    nai
+    -t nai
     -A tElf=example.elf
     -A segment_intflash=""
-    -nt netx90 app_image.nai
+    -nt netx90
+    app_image.nai
     
     Examples for Aliases:
     --------------------
-    * -A segment_intflash="": preload every segment from the linker file to the intflash
-    * -A segment_intflash=",": (empty list) not allowed!
+    * -A segment_intflash="": (no list) Selects all segments from the linker script, which have the prog bit set.
+    * -A segment_intflash=",": (empty list) Not allowed!
         
-Example for creating a nai and nae image
-========================================   
+Example for creating a nai and nae HBoot image
+==============================================
     $ %s
      -t nae
      -A tElf=example.elf
      -A segment_intflash=".header,.code"
      -A segments_extflash=".code_SDRAM1,.code_SDRAM2"
-     -nt netx90 app_image.nai app_image.nae 
+     -nt netx90
+     app_image.nai
+     app_image.nae 
     
     Examples for Aliases:
     --------------------
-     * -A segment_intflash=".header,.code": preloaded the segments ".header,.code" from the linker file to the intflash
-     * -A segment_intflash=",": (empty list) not allowed!
-     * -A segments_extflash=".code_SDRAM1,.code_SDRAM2": preload the segments ".code_SDRAM1,.code_SDRAM2" from the
-      linker file to the SDRAM
+     * -A segment_intflash=".header,.code": Select the segments ".header,.code"
+                                            from the linker file to use for the intflash
+     * -A segment_intflash=",": (empty list) Not allowed!
+     * -A segment_intflash="": (no list) Not allowed!
+     
+     * -A segments_extflash=".code_SDRAM1,.code_SDRAM2": Select the segments ".code_SDRAM1,.code_SDRAM2" 
+                                                         from the linker file to use for the extflash/SDRAM
+     * -A segments_extflash=",": (empty list) No segment should be preloaded.
+     * -A segments_extflash="": (no list) Not allowed!
+     
 ''' % (executed_file, executed_file)
 
     tParser = argparse.ArgumentParser(
         formatter_class=argparse.RawDescriptionHelpFormatter,
-        description='Translate a Hboot-Image-XML file for netx90-APP image description file',
+        description='Translate a HBoot image XML file for netx90-APP image description file',
         epilog=hboot_image_compiler_app_epilog,
         add_help=False
     )
@@ -1941,7 +1949,8 @@ Example for creating a nai and nae image
     tParser.add_argument(
         '-v', '--version',
         action='version',
-        version=__version__
+        version=__version__,
+        help="Show program's version and exit"
     )
 
     tParser.add_argument(
@@ -1955,7 +1964,6 @@ Example for creating a nai and nae image
         '-nt', '--netx-type-public',
         dest='strNetxType',
         default='netx90',
-
         choices=[
             'netx90',
             'netx90_rev1',
@@ -1968,7 +1976,6 @@ Example for creating a nai and nae image
         '-n', '--netx-type',
         dest='strNetxType',
         default='netx90',
-        # required=True,
         choices=[
             # For compatibility with hboot_image.py
             # 'NETX90',
@@ -1992,7 +1999,7 @@ Example for creating a nai and nae image
         required=False,
         choices=['nai', 'nae'],
         metavar="LAYOUT",
-        help='Use nai or nae hboot image template-layout. Possible values are: %s' % ['nai', 'nae']
+        help='Use nai or nae HBoot image template-layout. Possible values are: %s' % ['nai', 'nae']
     )
     tParser.add_argument(
         '-c', '--objcopy',
@@ -2091,7 +2098,7 @@ Example for creating a nai and nae image
     )
 
     tArgs = tParser.parse_args(args=['--help'] if len(sys.argv) < 2 else None)  # prints help if args are less than 2
-    print("HBoot Image Compiler APP")
+    print("HBoot image compiler APP")
     print(__version__)
     print_args(tArgs)
 
@@ -2182,7 +2189,7 @@ Example for creating a nai and nae image
         strHbootImageLayout = getattr(tArgs, 'strHbootImageLayout')
         strInputFile = tArgs.astrFiles[0]
         if not (strInputFile.endswith(".xml") or strInputFile.endswith(".XML")):
-            raise argparse.ArgumentError("For the advanced mode the first parameter must be a hboot-image-XMl.")
+            raise argparse.ArgumentError("For the advanced mode the first parameter must be a HBoot image XMl file.")
         if len(tArgs.astrFiles) in [2, 3]:
             astrOutputFiles = tArgs.astrFiles[1:]
         else:
