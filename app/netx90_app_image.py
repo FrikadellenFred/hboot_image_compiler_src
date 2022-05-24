@@ -42,20 +42,54 @@ import tempfile
 import xml.dom.minidom
 import xml.etree.ElementTree
 
-# cwd_ = os.path.dirname(os.path.realpath(__file__))
-# project_path = os.path.dirname(cwd_)
-# sys.path.append(project_path)
-from hbi_settings import *
+from hbi_settings import READELF, OBJCPY, OBJDUMP, hbi_sources
 
 import hil_nxt_hboot_image_compiler.com.elf_support as elf_support
-from hil_nxt_hboot_image_compiler._version import get_versions
-version_dict = get_versions()
+from hil_nxt_hboot_image_compiler.nxt_version import get_version_strings
+__version__, __revision__, version_clean = get_version_strings()
+
+
 # import hil_nxt_hboot_image_compiler.com.hboot_image_version as hboot_image_version
 
 # Is this a standalone script?
 if __name__ != '__main__':
     # No -> import the SCons module.
     import SCons.Script
+
+
+sdram_choices = [0x00000000, 0x00400000, 0x00800000,
+                 0x01000000, 0x02000000, 0x04000000, 0x08000000]
+
+sdram_choices_hex_str = ["0x%08x" % num for num in sdram_choices]
+
+
+ROMLOADER_CHIPTYP_NETX90_MPW = 10
+ROMLOADER_CHIPTYP_NETX90 = 13
+ROMLOADER_CHIPTYP_NETX90B = 14
+ROMLOADER_CHIPTYP_NETX90D = 18
+
+netx90_mapping = {
+        # These names are for compatibility with the COM side HBoot image tool
+        # 'NETX90':     ROMLOADER_CHIPTYP_NETX90,
+        # 'NETX90B':    ROMLOADER_CHIPTYP_NETX90B,
+        # 'NETX90_MPW': ROMLOADER_CHIPTYP_NETX90_MPW,
+        # These names are for compatibility with the netx 90 HWConfig tool.
+        'netx90': ROMLOADER_CHIPTYP_NETX90B,  # Alias for the latest chip
+                                              # revision.
+        'netx90_rev0': ROMLOADER_CHIPTYP_NETX90,
+        'netx90_rev1': ROMLOADER_CHIPTYP_NETX90B,
+        'netx90_rev2': ROMLOADER_CHIPTYP_NETX90D,
+        'netx90_mpw': ROMLOADER_CHIPTYP_NETX90_MPW,
+    }
+
+
+def get_netx90_mapping():
+    mapped_netx_type = None
+    netx90_mapped_id = netx90_mapping.get('netx90')
+    for key, mapped_id in netx90_mapping.items():
+        if key not in ['netx90'] and mapped_id is netx90_mapped_id:
+            mapped_netx_type = key
+    return mapped_netx_type
 
 
 class AppImage:
@@ -1243,24 +1277,11 @@ class AppImage:
 
         return aulChunk
 
-    ROMLOADER_CHIPTYP_NETX90_MPW = 10
-    ROMLOADER_CHIPTYP_NETX90 = 13
-    ROMLOADER_CHIPTYP_NETX90B = 14
-    ROMLOADER_CHIPTYP_NETX90D = 17
 
-    atChipTypeMapping = {
-        # These names are for compatibility with the COM side HBoot image tool
-        # 'NETX90':     ROMLOADER_CHIPTYP_NETX90,
-        # 'NETX90B':    ROMLOADER_CHIPTYP_NETX90B,
-        # 'NETX90_MPW': ROMLOADER_CHIPTYP_NETX90_MPW,
-        # These names are for compatibility with the netx 90 HWConfig tool.
-        'netx90': ROMLOADER_CHIPTYP_NETX90D,  # Alias for the latest chip
-                                              # revision.
-        'netx90_rev0': ROMLOADER_CHIPTYP_NETX90,
-        'netx90_rev1': ROMLOADER_CHIPTYP_NETX90B,
-        'netx90_rev2': ROMLOADER_CHIPTYP_NETX90D,
-        'netx90_mpw': ROMLOADER_CHIPTYP_NETX90_MPW,
-    }
+
+
+
+    atChipTypeMapping = netx90_mapping
 
     BUS_SPI = 1
     BUS_IFlash = 2
@@ -1865,30 +1886,96 @@ def ApplyToEnv(env):
     env['BUILDERS']['AppImage'] = app_image_bld
 
 
+def print_args(args):
+    print("Run hboot image compiler app with arguments:")
+    for key, value in args.__dict__.items():
+        print("    %s: %s" % (key, value))
+    print("")
+
+
 if __name__ == '__main__':
+
+    executed_file = os.path.split(sys.argv[0])[-1]
+    # todo fill this properly
+    hboot_image_compiler_app_epilog = f'''
+
+Example for creating a nai HBoot image
+======================================
+    $ %s
+    -t nai
+    -A tElf=example.elf
+    -A segment_intflash=""
+    -nt netx90
+    app_image.nai
+    
+    Examples for Aliases:
+    --------------------
+    * -A segment_intflash="": (no list) Selects all segments from the linker script, which have the prog bit set.
+    * -A segment_intflash=",": (empty list) Not allowed!
+        
+Example for creating a nai and nae HBoot image
+==============================================
+    $ %s
+     -t nae
+     -A tElf=example.elf
+     -A segment_intflash=".header,.code"
+     -A segments_extflash=".code_SDRAM1,.code_SDRAM2"
+     -nt netx90
+     app_image.nai
+     app_image.nae 
+    
+    Examples for Aliases:
+    --------------------
+     * -A segment_intflash=".header,.code": Select the segments ".header,.code"
+                                            from the linker file to use for the intflash
+     * -A segment_intflash=",": (empty list) Not allowed!
+     * -A segment_intflash="": (no list) Not allowed!
+     
+     * -A segments_extflash=".code_SDRAM1,.code_SDRAM2": Select the segments ".code_SDRAM1,.code_SDRAM2" 
+                                                         from the linker file to use for the extflash/SDRAM
+     * -A segments_extflash=",": (empty list) No segment should be preloaded.
+     * -A segments_extflash="": (no list) Not allowed!
+     
+''' % (executed_file, executed_file)
+
     tParser = argparse.ArgumentParser(
-        description='Translate an XML APP image description file.'
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        description='Translate a HBoot image XML file for netx90-APP image description file',
+        epilog=hboot_image_compiler_app_epilog,
+        add_help=False
     )
+    tParser.add_argument('-h', '--help', action='help', default=argparse.SUPPRESS,
+                             help='Show this help message and exit')
     tParser.add_argument(
-        'strInputFile',
-        metavar='INPUT_FILE',
-        help='read the XML data from INPUT_FILE'
-    )
-    tParser.add_argument(
-        '--version',
+        '-v', '--version',
         action='version',
-        version=version_dict.get('version', 'ERROR: No version string found')
+        version=__version__,
+        help="Show program's version and exit"
     )
+
     tParser.add_argument(
-        'astrOutputFiles',
+        'astrFiles',
         nargs='+',
-        metavar='OUTPUT_FILE',
-        help='write the output to OUTPUT_FILE'
+        metavar='FILES',
+        help="List of files. If argument '--template-layout' is not used the first file of the list will be used as input file"
     )
-    tParser.add_argument(
+    tGroup = tParser.add_mutually_exclusive_group(required=False)
+    tGroup.add_argument(
+        '-nt', '--netx-type-public',
+        dest='strNetxType',
+        default='netx90',
+        choices=[
+            'netx90',
+            'netx90_rev1',
+        ],
+        metavar="NETX",
+        help='Build the image for netx type public NETX. Possible values are: %s. (netx90 is mapped to %s)' %
+             (['netx90', 'netx90_rev1'], get_netx90_mapping())
+    )
+    tGroup.add_argument(
         '-n', '--netx-type',
         dest='strNetxType',
-        required=True,
+        default='netx90',
         choices=[
             # For compatibility with hboot_image.py
             # 'NETX90',
@@ -1901,40 +1988,56 @@ if __name__ == '__main__':
             'netx90_rev1',
             'netx90_rev2',
         ],
-        metavar='NETX',
-        help='Build the image for netx type NETX.'
+        # metavar='NETX',
+        help=argparse.SUPPRESS,
+        # help='Build the image for netx type NETX.'
+    )
+
+    tParser.add_argument(
+        '-t', '--template-layout',
+        dest='strHbootImageLayout',
+        required=False,
+        choices=['nai', 'nae'],
+        metavar="LAYOUT",
+        help='Use nai or nae HBoot image template-layout. Possible values are: %s' % ['nai', 'nae']
     )
     tParser.add_argument(
         '-c', '--objcopy',
         dest='strObjCopy',
         required=False,
-        default='objcopy',
+        # default='objcopy',
+        default=OBJCPY,
         metavar='FILE',
-        help='Use FILE as the objcopy tool.'
+        # help='Use FILE as the objcopy tool.'
+        help=argparse.SUPPRESS
     )
     tParser.add_argument(
         '-d', '--objdump',
         dest='strObjDump',
         required=False,
-        default='objdump',
+        # default='objdump',
+        default=OBJDUMP,
         metavar='FILE',
-        help='Use FILE as the objdump tool.'
+        # help='Use FILE as the objdump tool.'
+        help=argparse.SUPPRESS
     )
     tParser.add_argument(
         '-r', '--readelf',
         dest='strReadElf',
         required=False,
-        default='readelf',
+        # default='readelf',
+        default=READELF,
         metavar='FILE',
-        help='Use FILE as the readelf tool.'
+        # help='Use FILE as the readelf tool.'
+        help=argparse.SUPPRESS
     )
     tParser.add_argument(
         '-A', '--alias',
         dest='astrAliases',
         required=False,
         action='append',
-        metavar='ALIAS=FILE',
-        help='Add an alias in the form ALIAS=FILE.'
+        metavar='ALIAS=VALUE',
+        help='Provide a value for an alias in the form of ALIAS=VALUE'
     )
     tParser.add_argument(
         '-I', '--include',
@@ -1942,7 +2045,8 @@ if __name__ == '__main__':
         required=False,
         action='append',
         metavar='PATH',
-        help='Add PATH to the list of include paths.'
+        # help='Add PATH to the list of include paths.'
+        help=argparse.SUPPRESS
     )
     tParser.add_argument(
         '-k', '--keyrom',
@@ -1950,24 +2054,28 @@ if __name__ == '__main__':
         required=False,
         default=None,
         metavar='FILE',
-        help='Read the keyrom data from FILE.'
+        # help='Read the keyrom data from FILE.'
+        help=argparse.SUPPRESS
     )
     tParser.add_argument(
         '-s',
         '--sdram_split_offset',
+        # '--sdram-split-offset', ?
         dest='strSDRamSplitOffset',
         default="0x00000000",
         required=False,
         metavar="SDRAM",
         help='Address offset for COM CPU to access APP side SDRAM.'
+             ' (default: "0x00000000") Possible values are: %s' % sdram_choices_hex_str
     )
     tParser.add_argument(
-        '-v',
+        '-V',
         '--verbose',
         dest='fVerbose',
         action='store_true',
         default=False,
-        help='be verbose'
+        # help='show debug messages',
+        help=argparse.SUPPRESS
     )
     tParser.add_argument(
         '--openssl-exe',
@@ -1975,7 +2083,8 @@ if __name__ == '__main__':
         required=False,
         default='openssl',
         metavar='PATH',
-        help='Add individual OpenSSL Path.'
+        # help='Add individual OpenSSL Path.'
+        help=argparse.SUPPRESS
     )
     tParser.add_argument(
         '--openssl-rand-off',
@@ -1984,9 +2093,14 @@ if __name__ == '__main__':
         default=False,
         action='store_const', const=True,
         metavar='SSLRAND',
-        help='Set openssl randomization true or false.'
+        # help='Set openssl randomization true or false.'
+        help=argparse.SUPPRESS
     )
-    tArgs = tParser.parse_args()
+
+    tArgs = tParser.parse_args(args=['--help'] if len(sys.argv) < 2 else None)  # prints help if args are less than 2
+    print("HBoot image compiler APP")
+    print(__version__)
+    print_args(tArgs)
 
     # Use a default logging level of "WARNING". Change it to "DEBUG" in
     # verbose mode.
@@ -2031,6 +2145,11 @@ if __name__ == '__main__':
     }
 
     ulSDRamSplitOffset = int(tArgs.strSDRamSplitOffset, 0)
+
+
+    if ulSDRamSplitOffset not in sdram_choices:
+        raise ValueError("Wrong value selected for 'sdram_split_offset' chose from %s" % [hex(x) for x in sdram_choices] )
+
     tAppImg = AppImage(
         tEnv,
         tArgs.strNetxType,
@@ -2049,7 +2168,36 @@ if __name__ == '__main__':
     #    print('>%s<' % strDesinationPath)
     # print ("===================================")
 
+    astrOutputFiles = None
+    strInputFile = None
+    if getattr(tArgs, 'strHbootImageLayout') is not None:
+        # use one of the template files
+        strHbootImageLayout = getattr(tArgs, 'strHbootImageLayout')
+        strInputFile = os.path.join(hbi_sources, 'templates', 'app', '%s_template.xml' % strHbootImageLayout.lower())
+        if not os.path.exists(strInputFile):
+            raise FileNotFoundError("could not find template '%s'" % strInputFile)
+        # all the files are output files
+        if len(tArgs.astrFiles) in [1, 2]:
+            astrOutputFiles = tArgs.astrFiles
+        else:
+            raise argparse.ArgumentError(
+                "Too few/many files were passed for this mode. (should be 1 or 2 but is %s)" % len(tArgs.astrFiles)
+            )
+
+    else:
+        print("Info: you are using an advanced mode. Consider using the parameter '--template-layout'.")
+        strHbootImageLayout = getattr(tArgs, 'strHbootImageLayout')
+        strInputFile = tArgs.astrFiles[0]
+        if not (strInputFile.endswith(".xml") or strInputFile.endswith(".XML")):
+            raise argparse.ArgumentError("For the advanced mode the first parameter must be a HBoot image XMl file.")
+        if len(tArgs.astrFiles) in [2, 3]:
+            astrOutputFiles = tArgs.astrFiles[1:]
+        else:
+            raise argparse.ArgumentError(
+                "Too few/many files were passed for this mode. (should be 2 or 3 but is %s)" % len(tArgs.astrFiles)
+            )
+
     tAppImg.process_app_image(
-        tArgs.strInputFile,
-        tArgs.astrOutputFiles
+        strInputFile,
+        astrOutputFiles
     )

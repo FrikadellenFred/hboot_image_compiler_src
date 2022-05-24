@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+    <!-- no end because the end is inside the following FW image. -->
+    <!-- Hardware configuration data located inside first 6kByte of internal flash  -->
+    <!-- Make sure that the HWC is exactly 6 kBytes long, as 2 kByte are reserved for Bootswitch -->
+<HBootImage type="REGULAR" device="INTFLASH" has_header="True" has_end="False" offset="0x0000" 
+    min_size="0x1800" min_size_fill="0xff" max_size="0x1800">
+  <Header set_flasher_parameters="true" />
+  <Chunks>
+    <!-- Reserve 1.5kByte space for HTBL. -->
+    <!-- It is required to have a fixed start address for the HWC identifier. -->
+    <!-- A fixed start address makes it easy to find the identifier. -->
+    <Skip absolute="0x600" fill="0x48" />
+
+    <Include name="@hw_config">
+        <Parameter name="HWC_TYPE_HEX">485743</Parameter>          <!-- "HWC" as hex ascii codes -->
+        <Parameter name="HWC_TYPE">HWC</Parameter>                 <!-- "HWC" as ascii string -->
+        <Parameter name="HWC_INFO_ADDRESS">0x00100608</Parameter>  <!-- Address of HWC info structure -->
+        <Parameter name="IS_MWC">0</Parameter>                     <!-- 0 for HWC -->
+        <Parameter name="BOOTSWITCH_IMAGE_START">0x1800</Parameter><!-- BootSwitch ulImageStart -->
+        <Parameter name="BOOTSWITCH_IMAGE_SIZE">0x0800</Parameter> <!-- BootSwitch ulImageSize -->
+        <Parameter name="BOOTSWITCH_ID_OFFSET">0x042c</Parameter>  <!-- BootSwitch ulOffsetToIdentifier -->
+    </Include>
+
+    <!-- BootSwitch footer/ulStdBootResult at 0x20240 + 0x54 + 0x18 = 0x202ac -->
+    <Data>
+        <Concat address="0x000202ac"> 
+            <UInt32>
+                0,             <!-- ulStdBootResult      -->
+                0,             <!-- ulStdBootResultDummy -->
+                0,             <!-- ulAltBootResult      -->
+                0,             <!-- ulAltBootResultDummy -->
+                0xEFFA100B     <!-- ulEndCookie          -->
+            </UInt32>
+        </Concat>
+    </Data>
+    
+    <!-- Breakpoint used for HWC: Jump to a bx lr instruction in ROM at 0x1FF00 in netx90 -->
+    <Execute start_app="false" lock_firewall="false" activate_debugging="true" apply_firewall_settings="false">
+      <Address>0x1FF01</Address>
+    </Execute>
+    
+    <!-- Skip over Bootswitch, fdl and FW File Header V3 until the offset 0x00003200. -->
+    <SkipIncomplete absolute="0x3200" />
+  </Chunks>
+</HBootImage>

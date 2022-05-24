@@ -25,22 +25,78 @@ import re
 from hbi_settings import *
 
 import hil_nxt_hboot_image_compiler
-from hil_nxt_hboot_image_compiler._version import get_versions
+
 from hil_nxt_hboot_image_compiler.com.hboot_image import HbootImage
-
+from hil_nxt_hboot_image_compiler.nxt_version import get_version_strings
+__version__, __revision__, version_clean = get_version_strings()
 module_path = os.path.dirname(hil_nxt_hboot_image_compiler.__file__)
-version_dict = get_versions()
 
-tParser = argparse.ArgumentParser(usage='hboot_image [options]')
+executed_file = os.path.split(sys.argv[0])[-1]
+hboot_image_compiler_com_epilog = f'''
+
+Example for creating a hwc HBoot image
+======================================
+    $ hboot_image_compiler_com.exe hwc_hboot.hwc -t hwc -nt netx90 -A hw_config="hwc_hboot.xml"
+    
+    * -A hw_config="hwc_hboot.xml": Specifies path to a file containing the hardware configuration.
+
+Example for creating a mwc HBoot image
+======================================
+    $ hboot_image_compiler_com.exe hwc_hboot.hwc -t mwc -nt netx90 -A hw_config="hwc_hboot.xml"
+    
+    * -A hw_config="hwc_hboot.xml": Specifies path to a file containing the hardware configuration.
+    
+'''
+
+
+def print_args(args):
+    print("Run hboot image compiler app with arguments:")
+    for key, value in args.__dict__.items():
+        print("    %s: %s" % (key, value))
+    print("")
+
+
+tParser = argparse.ArgumentParser(
+    usage='hboot_image [options]',
+    epilog=hboot_image_compiler_com_epilog,
+    formatter_class=argparse.RawTextHelpFormatter,
+    add_help=False
+)
 tParser.add_argument(
+    '-h', '--help',
+    action='help',
+    default=argparse.SUPPRESS,
+    help='Show this help message and exit'
+)
+tParser.add_argument(
+    '-v',
     '--version',
     action='version',
-    version=version_dict.get('version', 'ERROR: no version string found!')
+    version=__version__,
+    help="Show program's version number and exit"
 )
-tGroupe = tParser.add_mutually_exclusive_group(required=True)
-tGroupe.add_argument('-n', '--netx-type',
-                     dest='strNetxType',
-                     choices=[
+
+tGroup = tParser.add_mutually_exclusive_group(required=False)
+tGroup.add_argument('-nt', '--netx-type-public',
+                    dest='strNetxType',
+                    choices=[
+                         'netx90',
+                         # 'netx90_rev0',
+                         'netx90_rev1',
+                         # 'netx90_rev2',
+                         # 'netx90_mpw',
+                         # 'NETX56',
+                         # 'NETX4000_RELAXED',
+                         # 'NETX4000',
+                         # 'NETX4100'
+                     ],
+                    default='netx90',
+                    metavar='NETX',
+                    help='Build the image for netX type public NETX. By default the newest netx90 type is selected.'
+                         ' Possible values are: %s' % ['netx90', 'netx90_rev1'])
+tGroup.add_argument('-n', '--netx-type',
+                    dest='strNetxType',
+                    choices=[
                          'NETX56',
                          'NETX90',
                          'NETX90B',
@@ -52,109 +108,140 @@ tGroupe.add_argument('-n', '--netx-type',
                          'NETX4100',
                          'NETXXL_MPW'
                      ],
-                     metavar='NETX',
-                     help='Build the image for netx type NETX.')
-tGroupe.add_argument('--netx-type-public',
-                     dest='strNetxType',
-                     choices=[
-                         'netx90',
-                         'netx90_rev0',
-                         'netx90_rev1',
-                         'netx90_rev2',
-                         'netx90_mpw',
-                         'NETX56',
-                         'NETX4000_RELAXED',
-                         'NETX4000',
-                         'NETX4100'
-                     ],
-                     metavar='NETX',
-                     help='Build the image for netx type public NETX.')
+                    metavar='NETX',
+                    help=argparse.SUPPRESS,
+                    # help='Build the image for netx type NETX.'
+                    )
+
 tParser.add_argument('-c', '--objcopy',
                      dest='strObjCopy',
                      required=False,
-                     default='objcopy',
+                     default=OBJCPY,
                      metavar='FILE',
-                     help='Use FILE as the objcopy tool.')
+                     # help='Use FILE as the objcopy tool.',
+                     help=argparse.SUPPRESS
+                     )
 tParser.add_argument('-d', '--objdump',
                      dest='strObjDump',
                      required=False,
-                     default='objdump',
+                     default=OBJDUMP,
                      metavar='FILE',
-                     help='Use FILE as the objdump tool.')
+                     # help='Use FILE as the objdump tool.',
+                     help=argparse.SUPPRESS)
+tParser.add_argument('-r', '--readelf',
+                     dest='strReadElf',
+                     required=False,
+                     default=READELF,
+                     metavar='FILE',
+                     # help='Use FILE as the readelf tool.',
+                     help=argparse.SUPPRESS)
 tParser.add_argument('-k', '--keyrom',
                      dest='strKeyRomPath',
                      required=False,
                      default=None,
                      metavar='FILE',
-                     help='Read the keyrom data from FILE.')
+                     # help='Read the keyrom data from FILE.',
+                     help=argparse.SUPPRESS)
 tParser.add_argument('-p', '--patch-table',
                      dest='strPatchTablePath',
                      required=False,
                      default=None,
                      metavar='FILE',
-                     help='Read the patch table from FILE.')
-tParser.add_argument('-r', '--readelf',
-                     dest='strReadElf',
-                     required=False,
-                     default='readelf',
-                     metavar='FILE',
-                     help='Use FILE as the readelf tool.')
-tParser.add_argument('-v', '--verbose',
+                     # help='Read the patch table from FILE.',
+                     help=argparse.SUPPRESS)
+
+tParser.add_argument('-V', '--verbose',
                      dest='fVerbose',
                      required=False,
                      default=False,
                      action='store_const', const=True,
-                     help='Be more verbose.')
+                     # help='Be more verbose.',
+                     help=argparse.SUPPRESS)
 tParser.add_argument('-A', '--alias',
                      dest='astrAliases',
                      required=False,
                      action='append',
-                     metavar='ALIAS=FILE',
-                     help='Add an alias in the form ALIAS=FILE.')
+                     metavar='ALIAS=VALUE',
+                     help='Provide a value for an alias in the form of ALIAS=VALUE')
 tParser.add_argument('-D', '--define',
                      dest='astrDefines',
                      required=False,
                      action='append',
                      metavar='NAME=VALUE',
-                     help='Add a define in the form NAME=VALUE.')
+                     # help='Add a define in the form NAME=VALUE.',
+                     help=argparse.SUPPRESS)
 tParser.add_argument('-I', '--include',
                      dest='astrIncludePaths',
                      required=False,
                      action='append',
                      metavar='PATH',
-                     help='Add PATH to the list of include paths.')
+                     # help='Add PATH to the list of include paths.',
+                     help=argparse.SUPPRESS)
 tParser.add_argument('-S', '--sniplib',
                      dest='astrSnipLib',
                      required=False,
                      action='append',
                      metavar='PATH',
-                     help='Add PATH to the list of sniplib paths.')
+                     # help='Add PATH to the list of sniplib paths.',
+                     help=argparse.SUPPRESS)
 tParser.add_argument('--openssl-options',
                      dest='astrOpensslOptions',
                      required=False,
                      action='append',
                      metavar='SSLOPT',
-                     help='Add SSLOPT to the arguments for OpenSSL.')
+                     # help='Add SSLOPT to the arguments for OpenSSL.',
+                     help=argparse.SUPPRESS
+                     )
 tParser.add_argument('--openssl-exe',
                      dest='strOpensslExe',
                      required=False,
                      default='openssl',
                      metavar='PATH',
-                     help='Add individual OpenSSL Path.')
+                     # help='Add individual OpenSSL Path.',
+                     help=argparse.SUPPRESS
+                     )
 tParser.add_argument('--openssl-rand-off',
                      dest='fOpensslRandOff',
                      required=False,
                      default=False,
                      action='store_const', const=True,
                      metavar='SSLRAND',
-                     help='Set openssl randomization true or false.')
-tParser.add_argument('strInputFile',
-                     metavar='FILE',
-                     help='Read the HBoot definition from FILE.')
-tParser.add_argument('strOutputFile',
-                     metavar='FILE',
-                     help='Write the HBoot image to FILE.')
-tArgs = tParser.parse_args()
+                     # help='Set openssl randomization true or false.',
+                     help=argparse.SUPPRESS
+                     )
+# tParser.add_argument('strInputFile',
+#                      metavar='FILE',
+#                      help='Read the HBoot definition from FILE.')
+# tParser.add_argument('strOutputFile',
+#                      metavar='FILE',
+#                      help='Write the HBoot image to FILE.')
+tParser.add_argument(
+    '-t', '--template-layout',
+    dest='strHbootImageLayout',
+    required=False,
+    metavar="LAYOUT",
+    choices=['hwc', 'mwc'],
+    help='Use hwc or mwc HBoot image template-layout. Possible values are: %s' % ['hwc', 'mwc']
+)
+tParser.add_argument(
+    'astrFiles',
+    nargs='+',
+    metavar='FILES',
+    help="List of files. If argument '--template-layout' is not used the first file of the list will be used as input file"
+)
+tParser.add_argument(
+    '-a', '--append-file',
+    dest='strFileToAppend',
+    required=False,
+    metavar='FILE',
+    help="A binary file to be appended to the output file."
+)
+
+
+tArgs = tParser.parse_args(args=['--help'] if len(sys.argv) < 2 else None)
+print("HBoot image compiler COM")
+print(__version__)
+print_args(tArgs)
 
 # Set the default for the patch table here.
 atDefaultPatchTables = {
@@ -169,8 +256,9 @@ atDefaultPatchTables = {
     'NETX4100': 'hboot_netx4000_patch_table.xml'
 }
 
-if tArgs.strNetxType == 'netx90':
-    strNetxType = 'NETX90D'
+# change netx_type to internal namings
+if tArgs.strNetxType == 'netx90':  # netx90 is always mapped to newest netx90_revx
+    strNetxType = 'NETX90B'
 elif tArgs.strNetxType == 'netx90_rev0':
     strNetxType = 'NETX90'
 elif tArgs.strNetxType == 'netx90_rev1':
@@ -185,7 +273,7 @@ else:
 
 if tArgs.strPatchTablePath is None:
 
-    path_patch_tables = os.path.join(module_path, "patch_tables")
+    path_patch_tables = os.path.join(hbi_sources, "patch_tables")
 
     tArgs.strPatchTablePath = os.path.join(
         path_patch_tables,
@@ -201,7 +289,7 @@ if tArgs.astrAliases is not None:
         if tMatch is None:
             raise Exception(
                 'Invalid alias definition: "%s". '
-                'It must be "ALIAS=FILE" instead.' % strAliasDefinition
+                'It must be "ALIAS=VALUE" instead.' % strAliasDefinition
             )
         strAlias = tMatch.group(1)
         strFile = tMatch.group(2)
@@ -265,5 +353,35 @@ tCompiler = HbootImage(
     opensslexe=tArgs.strOpensslExe,
     opensslrandoff=tArgs.fOpensslRandOff
 )
-tCompiler.parse_image(tArgs.strInputFile)
-tCompiler.write(tArgs.strOutputFile)
+
+astrOutputFiles = None
+strInputFile = None
+if getattr(tArgs, 'strHbootImageLayout') is not None:
+    # use one of the template files
+    strHbootImageLayout = getattr(tArgs, 'strHbootImageLayout')
+    strInputFile = os.path.join(hbi_sources, 'templates', 'com',  'top_hboot_image_%s.xml' % strHbootImageLayout.lower())
+    if not os.path.exists(strInputFile):
+        raise FileNotFoundError("could not find template '%s'" % strInputFile)
+    # all the files are output files
+    if len(tArgs.astrFiles) in [1]:
+        astrOutputFiles = tArgs.astrFiles[0]
+    else:
+        raise argparse.ArgumentError(
+            "Too few/many files were passed for this mode. (should be 1 but is %s)" % len(tArgs.astrFiles)
+        )
+
+else:
+    print("Info: you are using an advanced mode. Consider using the parameter '--template-layout'.")
+    strHbootImageLayout = getattr(tArgs, 'strHbootImageLayout')
+    strInputFile = tArgs.astrFiles[0]
+    if not (strInputFile.endswith(".xml") or strInputFile.endswith(".XML")):
+        raise argparse.ArgumentError("For the advanced mode the first parameter must be a HBoot image XMl file.")
+    if len(tArgs.astrFiles) in [2]:
+        astrOutputFiles = tArgs.astrFiles[1]
+    else:
+        raise argparse.ArgumentError(
+            "Too few/many files were passed for this mode. (should be 2 but is %s)" % len(tArgs.astrFiles)
+        )
+
+tCompiler.parse_image(strInputFile)
+tCompiler.write(astrOutputFiles, strFileToAppend=tArgs.strFileToAppend)

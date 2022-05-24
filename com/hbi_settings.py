@@ -19,13 +19,54 @@
 # *   Free Software Foundation, Inc.,                                       *
 # *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
 # ***************************************************************************
-
 import os
 import sys
+import platform
+
 
 file_path = os.path.realpath(__file__)
-cwd_ = os.path.dirname(os.path.dirname(os.path.dirname(file_path)))
 
+
+if file_path.endswith(".py"):
+    hbi_sources = os.path.dirname(os.path.dirname(file_path))
+elif file_path.endswith(".pyc"):
+    hbi_sources = os.path.dirname(file_path)
+
+path_patch_tables = os.path.join(hbi_sources, "patch_tables")
+
+# Set the default for the patch table here.
+atDefaultPatchTables = {
+    'NETX56': 'hboot_netx56_patch_table.xml',
+    'NETX90': 'hboot_netx90_patch_table.xml',
+    'NETX90B': 'hboot_netx90b_patch_table.xml',
+    'NETX90C': 'hboot_netx90b_patch_table.xml',  # c also uses patch table b
+    'NETX90D': 'hboot_netx90d_patch_table.xml',
+    'NETX90_MPW': 'hboot_netx90_mpw_patch_table.xml',
+    'NETX4000_RELAXED': 'hboot_netx4000_relaxed_patch_table.xml',
+    'NETX4000': 'hboot_netx4000_patch_table.xml',
+    'NETX4100': 'hboot_netx4000_patch_table.xml'
+}
+
+cwd_ = os.path.dirname(hbi_sources)
+
+plat = platform.system()
+if plat == "Windows":
+    elf_compiler_dir = os.path.join(hbi_sources, 'elf_compiler', 'arm-none-eabi-gcc', '4.9.3', 'bin')
+    OBJCPY = os.path.join(elf_compiler_dir, 'arm-none-eabi-objcopy')
+    OBJDUMP = os.path.join(elf_compiler_dir, 'arm-none-eabi-objdump')
+    READELF = os.path.join(elf_compiler_dir, 'arm-none-eabi-readelf')
+elif plat == "linux":
+    OBJCPY = "objcopy"
+    OBJDUMP = "objdump"
+    READELF = "readelf"
+else:
+    OBJCPY = "objcopy"
+    OBJDUMP = "objdump"
+    READELF = "readelf"
+
+# print(OBJCPY)
+# print(OBJDUMP)
+# print(READELF)
 
 hbi_path = cwd_
 sys.path.insert(0, hbi_path)

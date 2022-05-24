@@ -119,8 +119,7 @@ class HbootImage:
     __sizHashDw = None
 
     __XmlKeyromContents = None
-    __cfg_openssl = r'C:\Users\frederikwoermann\Documents\_netx_tools\nxt_butler\modules\nxt.llsv.verify.secure_boot\ext\resources\openssl\openssl.exe'
-    # __cfg_openssl = 'openssl'
+    __cfg_openssl = None
     __cfg_openssloptions = None
     __fOpensslRandOff = False
 
@@ -160,7 +159,7 @@ class HbootImage:
     def __init__(self, tEnv, strNetxType, **kwargs):
         strPatchDefinition = None
         strKeyromFile = None
-        strCfgOpenssl = None
+        strCfgOpenssl = 'openssl'
         astrIncludePaths = []
         astrSnippetSearchPaths = []
         atKnownFiles = {}
@@ -1106,6 +1105,17 @@ class HbootImage:
         # Remove the temp file.
         os.remove(strBinFileName)
 
+        # Print an info message if the extracted data is empty.
+        if len(strData) == 0:
+            # If a list of segments has been specified, print this list
+            # (the value of the segments attribute)
+            if len(strSegmentsToDump) != 0:
+                print("The data extracted from ELF file %s, segments %s, is empty!"
+                    % (strAbsFilePath, strSegmentsToDump))
+            else:
+                print("The data extracted from ELF file %s is empty!"
+                    % (strAbsFilePath))
+
         return strData, pulLoadAddress
 
     def __get_data_contents_key(self, tKeyNode):
@@ -1833,6 +1843,9 @@ class HbootImage:
         self.__get_data_contents(tChunkNode, atData, True)
         strData = atData['data']
         pulLoadAddress = atData['load_address']
+
+        if len(strData) == 0:
+            raise Exception('Empty data chunk!')
 
         # Pad the application size to a multiple of DWORDs.
         strPadding = b'\x00' * ((4 - (len(strData) % 4)) & 3)
@@ -4512,10 +4525,10 @@ class HbootImage:
             atData.extend([0] * sizPadding)
 
             if iKeyTyp_1ECC_2RSA == 1:
-                sizKeyInDwords = len(atAttr['Qx']) / 4
+                sizKeyInDwords = int(len(atAttr['Qx']) / 4)
                 sizSignatureInDwords = 2 * sizKeyInDwords
             elif iKeyTyp_1ECC_2RSA == 2:
-                sizKeyInDwords = len(atAttr['mod']) / 4
+                sizKeyInDwords = int(len(atAttr['mod']) / 4)
                 sizSignatureInDwords = sizKeyInDwords
 
             # Convert the padded data to an array.
@@ -5901,7 +5914,7 @@ class HbootImage:
                 )
             if (ulMinImageSize % 4) != 0:
                 raise Exception(
-                    'The min_size is not a multiple of four' % ulMinImageSize
+                    "The min_size is not a multiple of four '%s'" % ulMinImageSize
                 )
         strMinImageSizeFillValue = tXmlRootNode.getAttribute(
             'min_size_fill_value'
@@ -5932,7 +5945,7 @@ class HbootImage:
                 )
             if (ulMaxImageSize % 4) != 0:
                 raise Exception(
-                    'The max_size is not a multiple of four' % ulMaxImageSize
+                    "The max_size is not a multiple of four '%s'" % ulMaxImageSize
                 )
 
         self.__ulMaxImageSize = ulMaxImageSize
@@ -6008,7 +6021,7 @@ class HbootImage:
 
         return ucCrc
 
-    def write(self, strTargetPath):
+    def write(self, strTargetPath, strFileToAppend=None):
         """ Write all compiled chunks to the file strTargetPath . """
 
         if self.__tImageType == self.__IMAGE_TYPE_SECMEM:
@@ -6185,6 +6198,13 @@ class HbootImage:
             atEndMarker.tofile(tFile)
         if atFiller is not None:
             atFiller.tofile(tFile)
+        if strFileToAppend is not None:
+            print("Info: Appending the contents of the file %s to the output file." % (strFileToAppend))
+            tInputFile = open(strFileToAppend, 'rb')
+            acBin = tInputFile.read()
+            tInputFile.close()
+            tFile.write(acBin)
+            
         tFile.close()
 
     def dependency_scan(self, strInput):
