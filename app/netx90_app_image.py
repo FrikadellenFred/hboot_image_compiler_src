@@ -2133,6 +2133,10 @@ Example for creating a nai and nae HBoot image
                 )
             atKnownFiles[strAlias] = strFile
 
+    # add default value for alias headeraddress_extflash
+    if "headeraddress_extflash" not in atKnownFiles.keys():
+        atKnownFiles["headeraddress_extflash"] = "0x64300000"
+
     # Set an empty list of include paths if nothing was specified.
     if tArgs.astrIncludePaths is None:
         tArgs.astrIncludePaths = []
